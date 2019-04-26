@@ -1,0 +1,58 @@
+---
+title: "babble_basic_analysis"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r load_data}
+library(tidyverse)
+
+data_new <- read_delim("Baby_Part2_08022019_answers.csv", delim=';')
+
+```
+
+```{r new_data_analysis}
+nb_answers_new <- data_new %>%
+  group_by(AudioData) %>%
+  count()
+
+print(paste("Number of clips with at least one annotation:", nrow(nb_answers_new)))
+
+not_finished_new <- nb_answers_new %>%
+  filter(n<=2)
+
+print(paste("Number of clips with at least one annotation missing:",nrow(not_finished_new)))
+
+three_answers_new <- nb_answers_new %>%
+  filter(n>=3)
+
+print(paste("Number of clips with at least three annotations:",nrow(three_answers_new)))
+
+agreement_new <- data_new %>%
+  filter(AudioData %in% three_answers_new$AudioData) %>%
+  select(c("AudioData","Answer"))%>%
+  unique() %>%
+  group_by(AudioData) %>%
+  count() %>%
+  filter(n==1)
+
+print(paste("Number of clips with 100% agreement:",nrow(agreement_new)))
+
+non_majority_agreement_new <- data_new %>%
+  filter(AudioData %in% three_answers_new$AudioData) %>%
+  select(c("AudioData","Answer"))%>%
+  unique() %>%
+  group_by(AudioData) %>%
+  count() %>%
+  filter(n>2)
+
+print(paste("Number of clips without majority agreement:",nrow(non_majority_agreement_new)))
+# merged <- non_majority_agreement_new %>%
+#   left_join(nb_answers_new, by="AudioData") %>%
+#   filter(n.x==3 && n.y==3)
+
+```

@@ -1,0 +1,44 @@
+---
+title: "get_no_maj_agreement"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r library}
+library(tidyverse)
+```
+Meta answers should be a csv with one row per answer and the columns chunk_id eg "0315248294.wav", full_name eg "Cychosz_105_740_36083.21_36084.92.wav", dataset_part eg "2", Answer eg "Junk".
+
+path_non_agree is where the output will be stored.
+```{r data}
+meta_answers <- read_csv("correct_metadata_global.csv", col_types = cols(.default = "c"))
+
+path_non_agree <-"non_maj_agree_200219.csv"
+```
+
+```{r get_non_agree}
+meta_answers[meta_answers=="Non-canonical"] <- "Non_canonical"
+meta_answers[is.na(meta_answers)] <- "No_answer"
+
+count_answers <- meta_answers %>%
+  group_by(chunk_id, full_name, dataset_part, Answer) %>%
+  count() %>%
+  spread(key=Answer, value=n, fill=0) %>%
+  mutate(total=Canonical+Crying+Junk+Laughing+Non_canonical+No_answer)
+
+non_maj_agree <- count_answers %>%
+  mutate(max_val = max(c(Canonical,Crying,Junk,Laughing,Non_canonical,No_answer))) %>%
+  mutate(Can_max = (Canonical==max_val), Cry_max=(Crying==max_val), Junk_max=(Junk==max_val), Lau_max=(Laughing==max_val), NonC_max=(Non_canonical==max_val)) %>%
+  mutate(total_max=sum(Can_max, Cry_max, Junk_max, Lau_max, NonC_max)) %>%
+  filter(total_max>1 | max_val<=total/2 | total < 3) %>%
+  
+  select(full_name, dataset_part)
+```
+
+```{r save}
+write_csv(non_maj_agree, path_non_agree)
+```

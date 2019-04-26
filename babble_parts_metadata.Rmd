@@ -1,0 +1,164 @@
+---
+title: "babble - part recap"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r lib, include=F}
+library(tidyverse)
+```
+```{r data, include=F}
+link_file <- "~/Downloads/Linking-file-2-27-19.txt"
+link <- read.csv(link_file, 
+                 header=F, 
+                 sep='\t', 
+                 colClasses=c("character", "character", "character", "character", 
+                              "character"))
+
+answers_path <- "~/Downloads/20022019_Part5_answers.csv"
+answers <- read.csv(answers_path, sep=";")
+```
+
+```{r link_stats, include=F}
+preprocessed_link <- link %>%
+  separate(V3, c("corpus", "subject", "age", "begin", "end"), sep="_") %>%
+  separate(subject, c("subject","nb"), sep="-") %>%
+  separate(end, c("end", "wav"), sep=-4) %>%
+  filter(corpus %in% c("Seedlings", "Tseltal", "Casillas-Yeli", "Cychosz", "IBIS", "TonnsenSeidl", "Tsimane", "Warlaumont")) %>%
+  select(-c("V1", "wav"))
+
+nb_subj_by_corpus <- preprocessed_link %>%
+  select(corpus, subject) %>%
+  unique() %>%
+  group_by(corpus) %>%
+  count()
+
+nb_clips_by_subj <- preprocessed_link %>%
+  group_by(corpus, subject) %>%
+  count()
+
+nb_utt_by_subj <- preprocessed_link %>%
+  select(corpus, subject, begin, end) %>%
+  unique()%>%
+  group_by(corpus, subject) %>%
+  count()
+
+
+utt_duration <- preprocessed_link %>%
+  select(corpus, subject, begin, end) %>%
+  unique() %>%
+  mutate(length_utt = as.numeric(end)-as.numeric(begin))
+
+mean_utt_duration <- utt_duration %>%
+  group_by(corpus) %>%
+  mutate(avg = mean(length_utt), med = median(length_utt)) %>%
+  select(-c(begin, end, length_utt, subject)) %>%
+  unique()
+
+sort(utt_duration$length_utt, decreasing=T)[1:10]
+ggplot(utt_duration, aes(x=length_utt))+
+  geom_histogram()
+```
+```{r answers, include=F}
+
+
+preprocessed_answers <- answers %>%
+  select(c("AudioData", "Answer")) %>%
+  separate(AudioData, c("null", "media", "team", "babble", "chunk_id"), sep='/') %>%
+  separate(chunk_id, c("chunk_id", "wav"), sep=-4) %>%
+  select(chunk_id, Answer) %>%
+  mutate(chunk_id = as.character(chunk_id), Answer = as.character(Answer))
+
+
+merged <- preprocessed_answers %>%
+  merge(preprocessed_link, by.x = 'chunk_id', by.y = "V2", all.x = T)
+
+```
+
+```{r analysis_answers, include=F}
+
+# merged %>%
+#   filter(is.na(corpus)) %>%
+#   distinct(chunk_id)
+merged <- merged %>%
+  filter(!(is.na(corpus)))
+
+
+nb_subj_by_corpus <- merged %>%
+  select(corpus, subject, age) %>%
+  unique() %>%
+  group_by(corpus) %>%
+  count()
+
+nb_clips_by_subj <- merged %>%
+  group_by(corpus, subject, age) %>%
+  count()
+
+nb_utt_by_subj <- merged %>%
+  select(corpus, subject, begin, end, age) %>%
+  unique()%>%
+  group_by(corpus, subject, age) %>%
+  count()
+
+
+utt_duration <- merged %>%
+  select(corpus, subject, begin, end) %>%
+  unique() %>%
+  mutate(length_utt = as.numeric(end)-as.numeric(begin))
+
+# mean_utt_duration <- utt_duration %>%
+#   group_by(corpus) %>%
+#   mutate(avg = mean(length_utt), med = median(length_utt)) %>%
+#   select(-c(begin, end, length_utt, subject)) %>%
+#   unique()
+
+
+```
+
+## Metadata to clip id file: 
+```{r link_file} 
+link_file
+```
+
+## Answer spreadsheet: 
+```{r answer_file}
+answers_path
+```
+
+## Subjects per corpus in this part:
+
+```{r sub_corp, echo=F}
+print.data.frame(nb_subj_by_corpus)
+
+```
+
+## Utterances by subject: 
+
+```{r utt_sub}
+print.data.frame(nb_utt_by_subj)
+```
+
+
+## Clips by subject:
+
+```{r clips_sub}
+print.data.frame(nb_clips_by_subj)
+```
+
+## Total number of clips: 
+```{r total+clips}
+sum(nb_clips_by_subj$n)
+```
+
+
+## Duration of 10 longest utterances+histogram of utt durations
+```{r utt_dur, echo=F}
+sort(utt_duration$length_utt, decreasing=T)[1:10]
+ggplot(utt_duration, aes(x=length_utt))+
+  geom_histogram()
+```
