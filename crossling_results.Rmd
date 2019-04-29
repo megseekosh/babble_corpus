@@ -1,0 +1,387 @@
+---
+title: "Babble_results"
+author: "Meg Cychosz"
+date: "3/25/2019"
+output: html_document
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, load necessary packages, include = FALSE}
+library('doBy')
+library('dplyr')
+library('tidyverse')
+library('ggplot2')
+library('ggpubr')
+```
+
+```{r, import_data, include=FALSE}
+data.in <- read_csv("metadata_answers_global_noRAM.csv", col_types = cols(.default = "c"))
+data.in[data.in=="Non-canonical"] <- "Non_canonical"
+data.in[is.na(data.in)] <- "No_answer"
+```
+
+# Part I
+# Some basic info about audio clip annotations
+```{r, get basic info, echo=FALSE}
+#generated from Gladys Baudet's 'babble_analysis_basic.Rmd'
+answer_count <- data.in %>%
+  group_by(chunk_id) %>%
+  count()
+print(paste("Number of unique clips:",nrow(answer_count)))
+
+three_answers <- answer_count %>%
+  filter(n>=3)
+print(paste("Number of clips with at least three annotations:",nrow(three_answers)))
+
+# those clips with at least 3 votes that only had 1 category assigned to them
+total_agreement <- data.in %>%
+  filter(chunk_id %in% three_answers$chunk_id) %>%
+  select(c("chunk_id","Answer"))%>%
+  unique() %>%    
+  group_by(chunk_id) %>%  
+  count() %>%
+  filter(n==1) 
+print(paste("Number of clips with 100% annotator agreement:",nrow(total_agreement)))
+```
+
+```{r, get non_agreement, echo=FALSE}
+count_answers <- data.in %>%
+  group_by(chunk_id, full_name, dataset_part, Answer) %>%
+  count() %>%
+  spread(key=Answer, value=n, fill=0) %>%
+  mutate(total=Canonical+Crying+Junk+Laughing+Non_canonical+No_answer)
+
+non_maj_agree <- count_answers %>%
+  mutate(max_val = max(c(Canonical,Crying,Junk,Laughing,Non_canonical,No_answer))) %>%
+  mutate(Can_max = (Canonical==max_val), Cry_max=(Crying==max_val), Junk_max=(Junk==max_val), Lau_max=(Laughing==max_val), NonC_max=(Non_canonical==max_val)) %>%
+  mutate(total_max=sum(Can_max, Cry_max, Junk_max, Lau_max, NonC_max)) %>%
+  filter(total_max>1 | max_val<=total/2 | total < 3)
+
+print(paste("Number of clips without majority agreement:",nrow(non_maj_agree)))
+```
+
+```{r, make 100% agreement df, echo=FALSE}
+# first grab df of clips with 100% agreement
+agreed_meta <- data.in %>% 
+  filter(chunk_id %in% 
+  total_agreement$chunk_id)
+agreed_meta2 <- agreed_meta[firstobs(agreed_meta$chunk_id), ] 
+```
+
+```{r, make majority df, echo=FALSE}
+# now get df of majority clips
+maj <- data.in[!(data.in$chunk_id %in% agreed_meta2$chunk_id),]
+maj2 <- maj[!(maj$chunk_id %in% non_maj_agree$chunk_id),] 
+maj3 <- maj2[firstobs(maj2$chunk_id),]
+print(paste("Number of clips with majority agreement:",nrow(maj3))) # includes "no_answer"
+
+# combine 100% and majority clips
+data <- rbind(agreed_meta2, maj3)
+data <- data[- grep("No_answer", data$Answer),]
+```
+
+# Distribution of categories by corpus: raw counts
+excluding "no_answer"
+```{r, raw counts, echo=FALSE}
+counts <- table(data$Answer, data$corpus)
+tab <- addmargins(counts, FUN = list(Total = sum), quiet = TRUE)
+tab
+```
+
+\newpage
+# Plot raw counts
+```{r, visualize counts}
+data %>% 
+  count(corpus, Answer) %>%
+  mutate(group = factor(corpus)) %>% 
+  {
+  ggplot(., aes(corpus, n, fill=Answer)) + 
+  geom_col(aes(fill = Answer)) +
+  ggtitle("Annotations by corpus: raw counts", 
+          subtitle = 'Categories with under 50 observations are not labelled') +
+  geom_text(data=filter(., n>50), aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+# Distribution of categories by corpus: percentage
+```{r percentages}
+counts %>% prop.table(margin = 2) %>% '*' (100) %>% round(2)
+```
+
+# Across corpora, are younger kids just junkier?
+```{r, junk by age}
+data$age_mo_round <- as.numeric(data$age_mo_round)
+junk <- data %>% filter(Answer=='Junk')
+
+junk %>% 
+  count(age_mo_round, Answer) %>%
+  mutate(group = factor(age_mo_round)) %>% 
+  {
+  ggplot(., aes(age_mo_round, n, fill=Answer)) + 
+  geom_col(aes(fill = Answer)) +
+  ggtitle("Number of clips classified as 'junk' by age: raw counts") +
+  xlab('Age (months)') +    
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3) +
+  guides(fill=FALSE) +
+  annotate('segment', x=8, xend=4, y=750, yend = 650, color='slategrey', arrow=arrow()) +
+  annotate('text', x=9, y=790, label='Warlaumont corpus')  
+    } 
+```
+
+\newpage
+# Do we see the same ratio of crying:laughing:everything else by age?
+Categorizations by age (months): percentage
+```{r, categories by age, echo=FALSE}
+cate <- table(data$Answer, data$age_mo_round)
+cate2 <- addmargins(cate, FUN = list(Total = sum), quiet = TRUE)
+cate2 %>% prop.table(margin = 2) %>% '*' (100) %>% round(2) 
+
+data %>% 
+  count(age_mo_round, Answer) %>%
+  mutate(group = factor(age_mo_round)) %>% 
+  {
+  ggplot(., aes(age_mo_round, n, fill=Answer)) + 
+  geom_col(aes(fill = Answer)) +
+  ggtitle("Categorizations by age (months): raw counts") +
+  xlab('Age (months)')  
+  #geom_text(aes(label=n), position=position_stack(0.5), size = 3) +
+  } 
+```
+
+
+
+\newpage
+# Distribution of categories without junk: raw counts
+```{r, no_junk, echo=FALSE}
+no_junk <- subset(data, Answer!='Junk')
+no_junk$Answer <- droplevels(as.factor(no_junk$Answer))
+counts_nojunk <- table(no_junk$Answer, no_junk$corpus)
+counts_nojunk
+```
+
+
+
+```{r, visualize_nojunk, echo=FALSE}
+no_junk %>%
+  count(corpus, Answer) %>%
+  mutate(group = factor(corpus)) %>% 
+  {
+  ggplot(., aes(corpus, n, fill=Answer)) + 
+  geom_col(aes(fill=Answer)) +
+  ggtitle("Annotations by corpus without junk: raw counts", 
+          subtitle = 'Categories with under 50 observations are not labelled') +
+  geom_text(data=filter(., n>50), aes(label=n), position=position_stack(0.5), size = 3)
+  }
+```
+
+# Distribution of categories without junk: percentage
+```{r, nojunk_percentage, echo=FALSE}
+counts_nojunk %>% prop.table(margin = 2) %>% '*' (100) %>% round(2)
+```
+
+\newpage
+# Part II
+# Calculate CBR
+```{r, CBR, echo=TRUE}
+CBR <- subset(data, Answer=='Non_canonical' | Answer=='Canonical')
+CBR$Answer <- droplevels(as.factor(CBR$Answer))
+rat <- table(CBR$Answer, CBR$corpus)
+new_tab <- addmargins(rat, FUN = list(Total = sum), quiet = TRUE)
+
+final <- rbind(new_tab, new_tab[1,] / new_tab[3,]) # create CBR
+rownames(final)[4]<-"CBR"
+round(final,2)
+```
+
+\newpage
+# CBR by age (months): all corpora 
+note that each age group can contain multiple children
+```{r, age_analysis, echo=TRUE}
+
+age_tab <- table(CBR$age_mo_round, CBR$Answer)
+age_tab2 <- addmargins(age_tab, FUN = list(Total = sum), quiet = TRUE)
+
+final_age <- cbind(age_tab2, age_tab2[,1 ] / age_tab2[,3 ]) # calculate CBR
+colnames(final_age)[4]<-"Ratio"
+round(final_age,2)
+```
+
+
+```{r, prepare df to plot, include=FALSE}
+new <- cbind(rownames(final_age), final_age)
+rownames(new) <- NULL
+new <- new[-nrow(new),] # remove "total" row
+
+colnames(new)[1]<-"age_mo_round"
+new <- as.data.frame(new)
+
+
+final <- merge(CBR, new, by = c("age_mo_round")) # add ratio variable to CBR
+final$age_mo_round <- as.numeric(final$age_mo_round)
+```
+
+\newpage
+```{r, visualize CBR by corpus, echo=FALSE, message=FALSE}
+#install.packages('plyr')
+library('plyr')
+final$corpus.CBR <- revalue(final$corpus, c("Warlaumont"="Warlaumont \n 0.19", "Seedlings"="Seedlings \n 0.16", "Tsimane"="Tsimane \n 0.25", "Cychosz"="Cychosz \n 0.41", "Tseltal"="Tseltal \n 0.36"))
+detach(package:plyr)
+
+final %>% 
+  count(corpus.CBR, Answer) %>%
+  mutate(group = factor(corpus.CBR)) %>% 
+  ggplot(aes(corpus.CBR, n)) + 
+  geom_col(aes(fill = Answer)) +
+  xlab("corpus and CBR") + 
+  ggtitle("Canonical babbling ratio by corpus")
+```
+
+
+
+
+```{r visualize CBR by age, echo=FALSE}
+final %>%
+ count(age_mo_round, Answer) %>%
+ mutate(group = factor(age_mo_round)) %>%
+ ggplot(aes(age_mo_round, n)) +
+ geom_col(aes(fill = Answer)) +
+ xlab("Age in Months") +
+ guides(fill=guide_legend(title="Syllable type")) +
+ scale_x_discrete(limits=c(final$age_mo_round)) +
+ ggtitle("Canonical babbling ratio by age (months)")
+```
+
+# Calculate each child's CBR 
+```{r, prepare for correlations, echo=FALSE}
+# show data
+bydays <- table(CBR$age_in_days, CBR$Answer)
+bydays <- addmargins(bydays, FUN = list(Total = sum), quiet = TRUE)
+bydays2 <- cbind(bydays, bydays[,1 ] / bydays[,3 ]) # calculate CBR
+colnames(bydays2)[4]<-"Ratio"
+round(bydays2,2)
+
+# create df from table to work with
+bydays2 <- bydays2[-nrow(bydays2),] # remove "total" row
+daysdf <- cbind(rownames(bydays2), data.frame(bydays2, row.names=NULL))
+colnames(daysdf)[1]<-"age_in_days"
+```
+
+```{r, prepare data, echo=FALSE}
+daysdf$age_in_days <- as.numeric(as.character(daysdf$age_in_days))
+daysdf <- merge(daysdf, CBR, by = c("age_in_days")) 
+```
+
+```{r,  plot correlation, echo=FALSE}
+ggplot(daysdf, aes(age_mo_round, Ratio))+
+ geom_point(aes(color = corpus)) +
+ labs(x = "Age (months)", y = "Canonical babbling ratio") +
+ ggtitle("Canonical babbling ratio by child age (months)") +
+ geom_smooth(method = "lm", color="black") +
+ stat_cor(method = "pearson", label.x = 10, label.y = .6)
+```
+
+```{r, CBR by months, echo=FALSE}
+ggplot(daysdf, aes(age_mo_round, Ratio, color=corpus, fill=corpus))+
+ geom_smooth(method = "lm") +
+ geom_point() +
+ labs(x = "Age (months)", y = "Canonical babbling ratio") +
+ ggtitle("Canonical babbling ratio by child age (months)", subtitle = 'This graph will be better once we have more data')
+```
+
+# Age by corpus
+```{r plot age*corpus, echo=FALSE}
+p <- final %>%
+ count(age_mo_round, Answer, corpus) %>%
+ mutate(group = factor(age_mo_round)) %>%
+ ggplot(aes(age_mo_round, n)) +
+ geom_col(aes(fill = Answer)) +
+ xlab("Age in Months") +
+ guides(fill=guide_legend(title="Syllable type")) +
+ ggtitle("Canonical babbling ratio by age (months) and corpus")
+
+ p + facet_wrap(~corpus)
+```
+
+# A very Euro-centric analysis
+```{r culture_analysis, echo=FALSE, message=FALSE}
+library('plyr')
+final$region <- revalue(final$corpus, c("Warlaumont"="N_American", "Seedlings"="N_American", "Tsimane"="Elsewhere", "Cychosz"="Elsewhere", "Tseltal"="Elsewhere"))
+detach(package:plyr)
+
+final %>%
+ count(region, Answer) %>%
+ mutate(group = factor(region)) %>%
+ ggplot(aes(region, n)) +
+ geom_col(aes(fill = Answer)) +
+ xlab("Region") +
+ guides(fill=guide_legend(title="Syllable type")) +
+ ggtitle("Canonical babbling ratio by region")
+```
+
+# CBR by Region and Age
+```{r, plot age*region, echo=FALSE}
+final %>%
+ count(age_mo_round, Answer, region) %>%
+ mutate(group = factor(age_mo_round)) %>%
+ ggplot(aes(age_mo_round, n)) +
+ geom_col(aes(fill = Answer)) +
+ facet_wrap(~region) +
+ xlab("Age in Months") +
+ guides(fill=guide_legend(title="Syllable type")) +
+ ggtitle("Canonical babbling ratio by age (months) and region")
+```
+
+```{r, map values, message=FALSE, echo=FALSE}
+library('plyr')
+daysdf$Region <- revalue(daysdf$corpus, c("Warlaumont"="N_American", "Seedlings"="N_American", "Tsimane"="Elsewhere", "Cychosz"="Elsewhere", "Tseltal"="Elsewhere"))
+detach(package:plyr)
+```
+
+```{r, correlate age in days by CBR, echo=FALSE, eval=FALSE}
+ggplot(daysdf, aes(age_in_days, Ratio)) +
+ geom_point(aes(color=Region)) +
+ #scale_color_manual(values=c("forestgreen", "#E69F00")) + 
+ labs(x = "Age (days)", y = "Canonical babbling ratio") +
+ ggtitle("Canonical babbling ratio by child age (days) and region") +
+ geom_smooth(method = "lm", color="black") +
+ stat_cor(method = "pearson", label.x = 150, label.y = .5)
+```
+
+```{r, correlate age in months by CBR, echo=FALSE}
+daysdf$age_mo_round <- as.numeric(daysdf$age_mo_round)
+ggplot(daysdf, aes(age_mo_round, Ratio)) +
+ geom_point(aes(color=Region)) +
+ #scale_color_manual(values=c("forestgreen", "#E69F00")) + 
+ labs(x = "Age (months)", y = "Canonical babbling ratio") +
+ ggtitle("Canonical babbling ratio by child age (months) and region") +
+ geom_smooth(method = "lm", color="black") +
+ stat_cor(method = "pearson", label.x = 8, label.y = .6)
+
+ggplot(daysdf, aes(age_mo_round, Ratio, color=Region, fill=Region)) +
+ geom_smooth(method = "lm") +
+ geom_point() +
+ labs(x = "Age (months)", y = "Canonical babbling ratio") +
+ ggtitle("Canonical babbling ratio by child age (months) and region")
+```
+
+# CBR by gender
+```{r, gender plots, echo=FALSE}
+ggplot(daysdf, aes(age_mo_round, Ratio)) +
+  geom_point(aes(color=child_sex)) +
+  scale_color_manual(values=c("royalblue3", "tomato3")) +
+  geom_smooth(method = "lm", color="black") +
+  labs(x = "Age (months)", y = "Canonical babbling ratio") +
+  ggtitle("Canonical babbling ratio by child age (months) and gender") +
+  stat_cor(method = "pearson", label.x = 8, label.y = .6)
+
+p2 <- ggplot(daysdf, aes(age_mo_round, Ratio)) +
+  geom_point(aes(color=child_sex)) +
+  scale_color_manual(values=c("royalblue3", "tomato3")) +
+  labs(x = "Age (months)", y = "Canonical babbling ratio") +
+  ggtitle("Canonical babbling ratio by child age (months), gender, & corpus")
+p2 + facet_wrap(~corpus)
+
+```
