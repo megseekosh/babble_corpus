@@ -29,7 +29,7 @@ preprocessed_link <- link %>%
   separate(V3, c("corpus", "subject", "age", "begin", "end"), sep="_") %>%
   separate(subject, c("subject","nb"), sep="-") %>%
   separate(end, c("end", "wav"), sep=-4) %>%
-  filter(corpus %in% c("Seedlings", "Tseltal", "Casillas-Yeli", "Cychosz", "IBIS", "TonnsenSeidl", "Tsimane", "Warlaumont")) %>%
+  # filter(corpus %in% c("Seedlings", "Tseltal", "Casillas-Yeli", "Cychosz", "IBIS", "TonnsenSeidl", "Tsimane", "Warlaumont")) %>%
   select(-c("V1", "wav"))
 
 nb_subj_by_corpus <- preprocessed_link %>%
@@ -86,7 +86,9 @@ merged <- preprocessed_answers %>%
 #   filter(is.na(corpus)) %>%
 #   distinct(chunk_id)
 merged <- merged %>%
-  filter(!(is.na(corpus)))
+  filter(!(is.na(corpus)))  %>%
+  select(-Answer) %>%
+  distinct()
 
 
 nb_subj_by_corpus <- merged %>%
@@ -152,6 +154,7 @@ print.data.frame(nb_clips_by_subj)
 
 ## Total number of clips: 
 ```{r total+clips}
+# sum((nb_clips_by_subj %>% filter(corpus=="Tseltal"))$n)
 sum(nb_clips_by_subj$n)
 ```
 
