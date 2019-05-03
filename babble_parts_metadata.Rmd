@@ -20,8 +20,11 @@ link <- read.csv(link_file,
                  colClasses=c("character", "character", "character", "character", 
                               "character"))
 
-answers_path <- "~/Downloads/20022019_Part5_answers.csv"
+answers_path <- "~/Downloads/20022019_Part3_answers.csv"
 answers <- read.csv(answers_path, sep=";")
+
+clips <- read.csv("clips_part3.csv", header=F) %>%
+  separate(V1, c("chunk_id", "wav"), sep=-4)
 ```
 
 ```{r link_stats, include=F}
@@ -158,6 +161,14 @@ print.data.frame(nb_clips_by_subj)
 sum(nb_clips_by_subj$n)
 ```
 
+
+```{r check_same_set}
+merged %>%
+  filter(!(chunk_id %in% clips$chunk_id))
+
+clips %>%
+  filter(!(chunk_id %in% merged$chunk_id))
+```
 
 ## Duration of 10 longest utterances+histogram of utt durations
 ```{r utt_dur, echo=F}
