@@ -22,3 +22,19 @@ from linking file and answer spreadsheet, retrieves:
 - number of clips by child
 - total number of clips in this part
 - histogram of the length of utterances in this part
+
+## utt_and_clip_duration
+
+Script to retrieve :
+
+- at the clip level (max 500ms):
+  - mean duration
+  - sd of duration
+  - min clip duration
+  - max clip duration
+  
+- at the utterance level:
+  - mean duration
+  - sd of duration
+  - min utt duration
+  - max utt duration
