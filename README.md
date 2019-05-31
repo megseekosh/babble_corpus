@@ -24,6 +24,9 @@ from linking file and answer spreadsheet, retrieves:
 - histogram of the length of utterances in this part
 
 ## utt_and_clip_duration
+To use the script, you should change:
+- the path to the linking file
+- the corpus you want information on
 
 Script to retrieve :
 
