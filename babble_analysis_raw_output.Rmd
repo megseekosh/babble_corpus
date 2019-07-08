@@ -1,0 +1,46 @@
+---
+title: "babble_analysis_raw_output"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+
+## Read data
+
+```{r read_data}
+data_6 <- read.csv("./20190708-141738_the-maturity-of-baby-sounds-part-6_answers.csv", sep=';')
+data_7 <- read.csv("./20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
+```
+
+
+## Analysis
+
+```{r first_analysis}
+hist_6 <- data_6 %>%
+  group_by(Media.File) %>% 
+  count()
+
+hist_6 %>% 
+  group_by(n) %>% 
+  tally()
+# Histogram of number of annotations
+hist(hist_6$n)
+
+hist_7 <- data_7 %>%
+  group_by(Media.File) %>% 
+  count()
+
+hist_7 %>% 
+  group_by(n) %>% 
+  tally()
+
+hist(hist_7$n)
+  
+```
