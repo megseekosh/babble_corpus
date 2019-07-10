@@ -16,7 +16,14 @@ library(tidyverse)
 
 ```{r read_data}
 data_6 <- read.csv("./20190708-141738_the-maturity-of-baby-sounds-part-6_answers.csv", sep=';')
-data_7 <- read.csv("./20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
+data_7_1 <- read.csv("./20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
+data_7_2 <- read.csv("./20190710-165105_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
+
+summary(data_7_1)
+data_7_1 <- data_7_1 %>% 
+  mutate("Bad.File." = as.factor("Bad.File."))
+summary(data_7_2)
+data_7 <- bind_rows(data_7_1, data_7_2)
 ```
 
 
@@ -37,10 +44,15 @@ hist_7 <- data_7 %>%
   group_by(Media.File) %>% 
   count()
 
+todo_7 <- hist_7 %>% 
+  filter(n <= 2)
+
 hist_7 %>% 
   group_by(n) %>% 
   tally()
 
 hist(hist_7$n)
+
+nrow(hist_7)
   
 ```
