@@ -1,0 +1,56 @@
+---
+title: "concat_all"
+output: html_document
+---
+
+# 1. Read all
+
+```{r read_all}
+# part 1 is gold standard
+part2 <- read.csv("20022019_Part2_answers.csv", sep=";") %>% 
+  separate(AudioData, c("path", "AudioData"), sep=-14) %>% 
+  select(c(UserID, AudioData, Answer))
+
+part3 <- read.csv("20022019_Part3_answers.csv", sep=";") %>% 
+  separate(AudioData, c("path", "AudioData"), sep=-14) %>% 
+  select(c(UserID, AudioData, Answer))
+
+part4 <- read.csv("20022019_Part4_answers.csv", sep=";") %>% 
+  separate(AudioData, c("path", "AudioData"), sep=-14) %>%
+  select(c(UserID, AudioData, Answer))
+
+part5 <- read.csv("20022019_Part5_answers.csv", sep=";") %>% 
+  separate(AudioData, c("path", "AudioData"), sep=-14) %>%
+  select(c(UserID, AudioData, Answer))
+
+part6 <- read.csv("./20190708-141738_the-maturity-of-baby-sounds-part-6_answers.csv", sep=';') %>% 
+  select(c(User.ID, Media.File, Answer)) %>% 
+  rename(UserID=User.ID, AudioData=Media.File)
+
+part7 <- read.csv("./20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';') %>%
+  select(c(User.ID, Media.File, Answer)) %>% 
+  rename(UserID=User.ID, AudioData=Media.File)
+
+colnames(part2)
+colnames(part3)
+colnames(part4)
+colnames(part5)
+colnames(part6)
+colnames(part7)
+
+all_parts <- bind_rows(part2, part3, part4, part5, part6, part7)
+
+```
+
+# 2. Analyze all
+
+```{r double_coders}
+analysis <- all_parts %>% 
+  group_by(UserID, AudioData) %>% 
+  count() %>% 
+  filter(n>1)
+
+analysis %>% distinct(AudioData) %>% nrow()
+analysis %>% distinct(UserID) %>% nrow()
+
+```
