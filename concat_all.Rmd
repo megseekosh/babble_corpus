@@ -42,15 +42,15 @@ all_parts <- bind_rows(part2, part3, part4, part5, part6, part7)
 
 ```
 
-# 2. Analyze all
+# 2. Find clips coded twice by same speaker
 
 ```{r double_coders}
-analysis <- all_parts %>% 
+double_coded <- all_parts %>% 
   group_by(UserID, AudioData) %>% 
   count() %>% 
   filter(n>1)
 
-analysis %>% distinct(AudioData) %>% nrow()
-analysis %>% distinct(UserID) %>% nrow()
+double_coded %>% ungroup() %>% distinct(AudioData) %>% nrow()
+double_coded %>% ungroup() %>% distinct(UserID) %>% nrow()
 
 ```
