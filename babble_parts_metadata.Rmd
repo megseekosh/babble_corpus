@@ -13,14 +13,14 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 ```{r data, include=F}
-link_file <- "~/Downloads/Linking-file-2-27-19.txt"
+link_file <- "./data/Linking-file-2-27-19.txt"
 link <- read.csv(link_file, 
                  header=F, 
                  sep='\t', 
                  colClasses=c("character", "character", "character", "character", 
                               "character"))
 
-answers_path <- "~/Downloads/20022019_Part3_answers.csv"
+answers_path <- "./data/20022019_Part3_answers.csv"
 answers <- read.csv(answers_path, sep=";")
 
 clips <- read.csv("clips_part3.csv", header=F) %>%
