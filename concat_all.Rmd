@@ -7,27 +7,27 @@ output: html_document
 
 ```{r read_all}
 # part 1 is gold standard
-part2 <- read.csv("20022019_Part2_answers.csv", sep=";") %>% 
+part2 <- read.csv("data/20022019_Part2_answers.csv", sep=";") %>% 
   separate(AudioData, c("path", "AudioData"), sep=-14) %>% 
   select(c(UserID, AudioData, Answer))
 
-part3 <- read.csv("20022019_Part3_answers.csv", sep=";") %>% 
+part3 <- read.csv("data/20022019_Part3_answers.csv", sep=";") %>% 
   separate(AudioData, c("path", "AudioData"), sep=-14) %>% 
   select(c(UserID, AudioData, Answer))
 
-part4 <- read.csv("20022019_Part4_answers.csv", sep=";") %>% 
+part4 <- read.csv("data/20022019_Part4_answers.csv", sep=";") %>% 
   separate(AudioData, c("path", "AudioData"), sep=-14) %>%
   select(c(UserID, AudioData, Answer))
 
-part5 <- read.csv("20022019_Part5_answers.csv", sep=";") %>% 
+part5 <- read.csv("data/20022019_Part5_answers.csv", sep=";") %>% 
   separate(AudioData, c("path", "AudioData"), sep=-14) %>%
   select(c(UserID, AudioData, Answer))
 
-part6 <- read.csv("./20190708-141738_the-maturity-of-baby-sounds-part-6_answers.csv", sep=';') %>% 
+part6 <- read.csv("data/20190708-141738_the-maturity-of-baby-sounds-part-6_answers.csv", sep=';') %>% 
   select(c(User.ID, Media.File, Answer)) %>% 
   rename(UserID=User.ID, AudioData=Media.File)
 
-part7 <- read.csv("./20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';') %>%
+part7 <- read.csv("data/20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';') %>%
   select(c(User.ID, Media.File, Answer)) %>% 
   rename(UserID=User.ID, AudioData=Media.File)
 
