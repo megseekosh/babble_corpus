@@ -1,8 +1,7 @@
 library(tidyverse)
 
 # Opening the linking_file
-babble_linking_file <- read_tsv("/Volumes/pn-opus/Seedlings/ACLEW/aclew_babble_corpus/Linking-file-2-27-19.txt", col_names=F)
-
+babble_linking_file <- read_tsv("data/Linking-file-2-27-19.txt", col_names=F)
 
 babble_linking_file %>% 
   count()
