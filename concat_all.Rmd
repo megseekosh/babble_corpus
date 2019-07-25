@@ -56,4 +56,10 @@ double_coded %>% ungroup() %>% distinct(AudioData) %>% nrow()
 # number of annotators that coded the same clip twice
 double_coded %>% ungroup() %>% distinct(UserID) %>% nrow()
 
+double_coded %>% ungroup() %>% group_by(UserID) %>% count()
+
+double_coded %>% ungroup() %>% left_join(all_parts)
+  
+double_coded %>% ungroup() %>% left_join(all_parts) %>% distinct()
+
 ```

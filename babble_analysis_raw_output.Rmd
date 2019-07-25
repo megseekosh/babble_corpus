@@ -17,19 +17,26 @@ library(tidyverse)
 ```{r read_data}
 data_6 <- read.csv("./20190708-141738_the-maturity-of-baby-sounds-part-6_answers.csv", sep=';')
 data_7_1 <- read.csv("./20190708-145538_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
-data_7_2 <- read.csv("./20190710-165105_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
+data_7_2 <- read.csv("./20190718-174158_the-maturity-of-baby-sounds-part-7_answers.csv", sep=';')
+
+clip_part7 <- read.csv("./clips_part7.csv", header=FALSE)
 
 summary(data_7_1)
 data_7_1 <- data_7_1 %>% 
   mutate("Bad.File." = as.factor("Bad.File."))
-summary(data_7_2)
+
 data_7 <- bind_rows(data_7_1, data_7_2)
+
+median(data_7_1$Decision.Time)
+median(data_7_2$Decision.Time)
 ```
 
 
 ## Analysis
 
 ```{r first_analysis}
+
+nrow(distinct(data_7, Media.File))
 hist_6 <- data_6 %>%
   group_by(Media.File) %>% 
   count()
@@ -44,15 +51,25 @@ hist_7 <- data_7 %>%
   group_by(Media.File) %>% 
   count()
 
+
+
 todo_7 <- hist_7 %>% 
   filter(n <= 2)
 
 hist_7 %>% 
   group_by(n) %>% 
-  tally()
+  tally() %>% 
+  add_row(n=0, nn=12057-nrow(hist_7))
 
 hist(hist_7$n)
 
 nrow(hist_7)
   
+```
+
+```{r find_unannotated_clips}
+no_annot <- clip_part7 %>% 
+  filter(!(V1 %in% data_7$Media.File))
+
+write_csv(no_annot, "./no_annot_part7.csv")
 ```
