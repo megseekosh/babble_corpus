@@ -1,5 +1,12 @@
 # babble_corpus
 
+## data/
+
+contains data for these scripts:
+  - list of clips per part
+  - answers spreadsheets
+  - linking file (metadata to clips)
+
 ## babble_analysis_basic
 
 Retrieves 
@@ -41,3 +48,11 @@ Script to retrieve :
   - sd of duration
   - min utt duration
   - max utt duration
+  
+## babble_analysis_raw_output
+  
+Reads output directly out of IHUP (currently for parts 6 and 7), looks at the distribution of the number of annotations per clip
+  
+## concat_all
+
+Read answers spreadsheets from all parts, concatenates them and looks for one coder annotating the same clips more than once
