@@ -13,15 +13,18 @@ knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
 ```
 ```{r data, include=F}
-link_file <- "~/Downloads/Linking-file-2-27-19.txt"
+link_file <- "./data/Linking-file-2-27-19.txt"
 link <- read.csv(link_file, 
                  header=F, 
                  sep='\t', 
                  colClasses=c("character", "character", "character", "character", 
                               "character"))
 
-answers_path <- "~/Downloads/20022019_Part5_answers.csv"
+answers_path <- "./data/20022019_Part3_answers.csv"
 answers <- read.csv(answers_path, sep=";")
+
+clips <- read.csv("clips_part3.csv", header=F) %>%
+  separate(V1, c("chunk_id", "wav"), sep=-4)
 ```
 
 ```{r link_stats, include=F}
@@ -29,7 +32,7 @@ preprocessed_link <- link %>%
   separate(V3, c("corpus", "subject", "age", "begin", "end"), sep="_") %>%
   separate(subject, c("subject","nb"), sep="-") %>%
   separate(end, c("end", "wav"), sep=-4) %>%
-  filter(corpus %in% c("Seedlings", "Tseltal", "Casillas-Yeli", "Cychosz", "IBIS", "TonnsenSeidl", "Tsimane", "Warlaumont")) %>%
+  # filter(corpus %in% c("Seedlings", "Tseltal", "Casillas-Yeli", "Cychosz", "IBIS", "TonnsenSeidl", "Tsimane", "Warlaumont")) %>%
   select(-c("V1", "wav"))
 
 nb_subj_by_corpus <- preprocessed_link %>%
@@ -86,7 +89,9 @@ merged <- preprocessed_answers %>%
 #   filter(is.na(corpus)) %>%
 #   distinct(chunk_id)
 merged <- merged %>%
-  filter(!(is.na(corpus)))
+  filter(!(is.na(corpus)))  %>%
+  select(-Answer) %>%
+  distinct()
 
 
 nb_subj_by_corpus <- merged %>%
@@ -152,9 +157,18 @@ print.data.frame(nb_clips_by_subj)
 
 ## Total number of clips: 
 ```{r total+clips}
+# sum((nb_clips_by_subj %>% filter(corpus=="Tseltal"))$n)
 sum(nb_clips_by_subj$n)
 ```
 
+
+```{r check_same_set}
+merged %>%
+  filter(!(chunk_id %in% clips$chunk_id))
+
+clips %>%
+  filter(!(chunk_id %in% merged$chunk_id))
+```
 
 ## Duration of 10 longest utterances+histogram of utt durations
 ```{r utt_dur, echo=F}

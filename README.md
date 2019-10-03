@@ -1,5 +1,12 @@
 # babble_corpus
 
+## data/
+
+contains data for these scripts:
+  - list of clips per part
+  - answers spreadsheets
+  - linking file (metadata to clips)
+
 ## babble_analysis_basic
 
 Retrieves 
@@ -23,10 +30,4 @@ from linking file and answer spreadsheet, retrieves:
 - total number of clips in this part
 - histogram of the length of utterances in this part
 
-## restich_clips
 
-- merge clips and conduct multisyllabic analyses
-
-## crossling_results
-
-- contains all stats and visuals for crossling paper
