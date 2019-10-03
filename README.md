@@ -22,3 +22,9 @@ from linking file and answer spreadsheet, retrieves:
 - number of clips by child
 - total number of clips in this part
 - histogram of the length of utterances in this part
+
+## restich_clips
+
+- merge clips and conduct multisyllabic analyses
+
+## 
