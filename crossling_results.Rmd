@@ -1,13 +1,17 @@
 ---
-title: "Babble_results"
+title: "Results"
 author: "Meg Cychosz"
-date: "3/25/2019"
-output: html_document
+date: "9/23/2019"
+output: 
+  bookdown::pdf_document2:
+    keep_tex: true
+indent: true
 ---
 
-```{r, setup, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 
 ```{r, load necessary packages, include = FALSE}
 library('doBy')
@@ -15,41 +19,38 @@ library('dplyr')
 library('tidyverse')
 library('ggplot2')
 library('ggpubr')
+library('bookdown')
+#library('knitr')
 ```
 
 ```{r, import_data, include=FALSE}
-data.in <- read_csv("metadata_answers_global_noRAM.csv", col_types = cols(.default = "c"))
+data.in <- read_csv("/Users/Meg/Box Sync/LENA_babble/crossling_paper_analysis/meta_answers_global_crossling_9-20.csv", col_types = cols(.default = "c"))
 data.in[data.in=="Non-canonical"] <- "Non_canonical"
 data.in[is.na(data.in)] <- "No_answer"
+data.in<- subset(data.in, corpus!="IBIS") # remove IBIS clips
+data.in[data.in=="Casillas-Yeli"] <- "Yeli"
+data.in$unq_childID <- paste(data.in$corpus, data.in$child_ID) # give each kid a unique child_ID # to make life easier
+
 ```
 
-# Part I
-# Some basic info about audio clip annotations
-```{r, get basic info, echo=FALSE}
-#generated from Gladys Baudet's 'babble_analysis_basic.Rmd'
+```{r, include=FALSE}
 answer_count <- data.in %>%
-  group_by(chunk_id) %>%
+  group_by(clip_ID) %>%
   count()
-print(paste("Number of unique clips:",nrow(answer_count)))
 
 three_answers <- answer_count %>%
   filter(n>=3)
-print(paste("Number of clips with at least three annotations:",nrow(three_answers)))
 
-# those clips with at least 3 votes that only had 1 category assigned to them
 total_agreement <- data.in %>%
-  filter(chunk_id %in% three_answers$chunk_id) %>%
-  select(c("chunk_id","Answer"))%>%
+  filter(clip_ID %in% three_answers$clip_ID) %>%
+  select(c("clip_ID","Answer"))%>%
   unique() %>%    
-  group_by(chunk_id) %>%  
+  group_by(clip_ID) %>%  
   count() %>%
   filter(n==1) 
-print(paste("Number of clips with 100% annotator agreement:",nrow(total_agreement)))
-```
 
-```{r, get non_agreement, echo=FALSE}
 count_answers <- data.in %>%
-  group_by(chunk_id, full_name, dataset_part, Answer) %>%
+  group_by(clip_ID, corpus, Answer) %>%
   count() %>%
   spread(key=Answer, value=n, fill=0) %>%
   mutate(total=Canonical+Crying+Junk+Laughing+Non_canonical+No_answer)
@@ -60,189 +61,177 @@ non_maj_agree <- count_answers %>%
   mutate(total_max=sum(Can_max, Cry_max, Junk_max, Lau_max, NonC_max)) %>%
   filter(total_max>1 | max_val<=total/2 | total < 3)
 
-print(paste("Number of clips without majority agreement:",nrow(non_maj_agree)))
-```
-
-```{r, make 100% agreement df, echo=FALSE}
 # first grab df of clips with 100% agreement
 agreed_meta <- data.in %>% 
-  filter(chunk_id %in% 
-  total_agreement$chunk_id)
-agreed_meta2 <- agreed_meta[firstobs(agreed_meta$chunk_id), ] 
-```
+  filter(clip_ID %in% 
+  total_agreement$clip_ID)
+agreed_meta2 <- agreed_meta[firstobs(agreed_meta$clip_ID), ] 
 
-```{r, make majority df, echo=FALSE}
 # now get df of majority clips
-maj <- data.in[!(data.in$chunk_id %in% agreed_meta2$chunk_id),]
-maj2 <- maj[!(maj$chunk_id %in% non_maj_agree$chunk_id),] 
-maj3 <- maj2[firstobs(maj2$chunk_id),]
+maj <- data.in[!(data.in$clip_ID %in% agreed_meta2$clip_ID),]
+maj2 <- maj[!(maj$clip_ID %in% non_maj_agree$clip_ID),] 
+maj3 <- maj2[firstobs(maj2$clip_ID),]
 print(paste("Number of clips with majority agreement:",nrow(maj3))) # includes "no_answer"
 
 # combine 100% and majority clips
 data <- rbind(agreed_meta2, maj3)
-data <- data[- grep("No_answer", data$Answer),]
-```
 
-# Distribution of categories by corpus: raw counts
-excluding "no_answer"
-```{r, raw counts, echo=FALSE}
-counts <- table(data$Answer, data$corpus)
-tab <- addmargins(counts, FUN = list(Total = sum), quiet = TRUE)
-tab
-```
+# calculate no answer clips from 100% and mjority clips
+noans <- data %>% filter(Answer=='No_answer')
 
-\newpage
-# Plot raw counts
-```{r, visualize counts}
-data %>% 
-  count(corpus, Answer) %>%
-  mutate(group = factor(corpus)) %>% 
-  {
-  ggplot(., aes(corpus, n, fill=Answer)) + 
-  geom_col(aes(fill = Answer)) +
-  ggtitle("Annotations by corpus: raw counts", 
-          subtitle = 'Categories with under 50 observations are not labelled') +
-  geom_text(data=filter(., n>50), aes(label=n), position=position_stack(0.5), size = 3)
-  } 
-```
-
-# Distribution of categories by corpus: percentage
-```{r percentages}
-counts %>% prop.table(margin = 2) %>% '*' (100) %>% round(2)
-```
-
-# Across corpora, are younger kids just junkier?
-```{r, junk by age}
-data$age_mo_round <- as.numeric(data$age_mo_round)
+# calculate junk clips from 100% and mjority clips
 junk <- data %>% filter(Answer=='Junk')
 
-junk %>% 
-  count(age_mo_round, Answer) %>%
-  mutate(group = factor(age_mo_round)) %>% 
-  {
-  ggplot(., aes(age_mo_round, n, fill=Answer)) + 
-  geom_col(aes(fill = Answer)) +
-  ggtitle("Number of clips classified as 'junk' by age: raw counts") +
-  xlab('Age (months)') +    
-  geom_text(aes(label=n), position=position_stack(0.5), size = 3) +
-  guides(fill=FALSE) +
-  annotate('segment', x=8, xend=4, y=750, yend = 650, color='slategrey', arrow=arrow()) +
-  annotate('text', x=9, y=790, label='Warlaumont corpus')  
-    } 
+# remove junk and no answer clips
+data <- data[- grep("No_answer", data$Answer),] 
+data <- data[- grep("Junk", data$Answer),] 
+
+
+# make subgroups by corpus; will be used throughout
+Tse <- data %>% filter(corpus == "Tseltal")
+See <- data %>% filter(corpus == "Seedlings")
+Yeli <- data %>% filter(corpus == "Yeli")
+Tsimane <- data %>% filter(corpus == "Tsimane")
+Cychosz <- data %>% filter(corpus == "Cychosz")
+War <- data %>% filter(corpus == "Warlaumont")
+
+# get the proportion of each corpus that contains 'laughing' (note these are tiny frames, not merged with original large df)
+data2 <- data %>% 
+  group_by(corpus) %>% 
+  summarize(
+    laugh_prop = (length(corpus[Answer=='Laughing'])/n())*100
+  )
+
+data3 <- data %>% 
+  group_by(corpus) %>% 
+  summarize(
+    cry_prop = (length(corpus[Answer=='Crying'])/n())*100
+  )
+
 ```
 
 \newpage
-# Do we see the same ratio of crying:laughing:everything else by age?
-Categorizations by age (months): percentage
-```{r, categories by age, echo=FALSE}
-cate <- table(data$Answer, data$age_mo_round)
-cate2 <- addmargins(cate, FUN = list(Total = sum), quiet = TRUE)
-cate2 %>% prop.table(margin = 2) %>% '*' (100) %>% round(2) 
+
+## Pre-processing of annotations
+
+Our primary research question concerns the timecourse of babbling development. Specifically, analyzing a large, culturally-diverse sample, we investigate if CBR and CBO emerge following the developmental timecourse that has been reported in previous work. We begin with descriptive statistics concerning the clip annotations.   
+
+Annotators on iHEARu-PLAY annotated `r nrow(answer_count)` clips. Each clip was annotated at least three times (range=`r round(min(answer_count$n),2)`-`r round(max(answer_count$n),2)` annotations, mean=`r round(mean(answer_count$n),2)`, SD=`r round(sd(answer_count$n),2)`) for a total of `r nrow(data.in)` annotations. Only those clips where all or the majority of the annotations (at least two) agreed on the category label were kept for analysis: N=`r nrow(total_agreement)` (`r round(nrow(total_agreement) / nrow(answer_count),4)*100`% of the original clips) had 100% rater agreement and N=`r nrow(maj3)` (`r round(nrow(maj3) / nrow(answer_count),4)*100`%) had majority annotator agreement. In total, N=`r nrow(non_maj_agree)` clips without majority agreement were removed from analyses (`r round(nrow(non_maj_agree) / nrow(answer_count),4)*100`% of original clips).  
+
+Of the all- or majority-labeled clips, N=`r nrow(junk)` (`r round(nrow(junk) / nrow(answer_count),4)*100`%) were categorized as junk and N=`r nrow(noans)` did not receive an answer. Those clips annotated as “junk” and “no answer” were also removed from further analyses.    
+
+
+```{r,  warning=FALSE,  include=FALSE}
+library('plyr')
+data$corpus_ct <- revalue(data$corpus, c("Warlaumont"="Warlaumont \n (n=3)", "Cychosz"="Cychosz \n (n=3)", 
+                                         "Tsimane" = "Tsimane \n (n=16)", "Tseltal" = "Tseltal \n (n=10)",
+                                         "Seedlings" = "Seedlings \n (n=10)", "Yeli" = "Yeli \n (n=10)"))
+detach(package:plyr)
+```
+
+```{r, rawcts, fig.cap = "Annotations by corpus: raw counts. \n Categories with under 50 observations are not labelled.", echo=FALSE}
 
 data %>% 
-  count(age_mo_round, Answer) %>%
-  mutate(group = factor(age_mo_round)) %>% 
+  count(corpus_ct, Answer) %>%
+  mutate(group = factor(corpus_ct)) %>% 
   {
-  ggplot(., aes(age_mo_round, n, fill=Answer)) + 
+  ggplot(., aes(corpus_ct, n, fill=Answer)) + 
   geom_col(aes(fill = Answer)) +
-  ggtitle("Categorizations by age (months): raw counts") +
-  xlab('Age (months)')  
-  #geom_text(aes(label=n), position=position_stack(0.5), size = 3) +
+  ggtitle("Annotations by corpus: raw counts") +  
+   #       subtitle = 'Categories with under 50 observations are not labelled') +
+  geom_text(data=filter(., n>50), aes(label=n), position=position_stack(0.5), size = 3) +
+        ylab('Number of annotated clips') + 
+      xlab('Corpus \n (number of children)')
   } 
 ```
 
 
+```{r, counts, echo=FALSE}
+counts <- table(data$Answer, data$corpus)
 
-\newpage
-# Distribution of categories without junk: raw counts
-```{r, no_junk, echo=FALSE}
-no_junk <- subset(data, Answer!='Junk')
-no_junk$Answer <- droplevels(as.factor(no_junk$Answer))
-counts_nojunk <- table(no_junk$Answer, no_junk$corpus)
-counts_nojunk
+# option to display raw counts (but this is already listed in the visual so seems redundant)
+#tab <- addmargins(counts, FUN = list(Total = sum), quiet = TRUE)
+#kable(tab, caption = 'Clip counts by category and corpus')
+
+tab2 <- prop.table(counts,margin = 2) %>% '*' (100) %>% round(2)
+knitr::kable(tab2, caption = 'Percentages of annotation categories by corpus')
 ```
 
 
 
-```{r, visualize_nojunk, echo=FALSE}
-no_junk %>%
-  count(corpus, Answer) %>%
-  mutate(group = factor(corpus)) %>% 
-  {
-  ggplot(., aes(corpus, n, fill=Answer)) + 
-  geom_col(aes(fill=Answer)) +
-  ggtitle("Annotations by corpus without junk: raw counts", 
-          subtitle = 'Categories with under 50 observations are not labelled') +
-  geom_text(data=filter(., n>50), aes(label=n), position=position_stack(0.5), size = 3)
-  }
-```
 
-# Distribution of categories without junk: percentage
-```{r, nojunk_percentage, echo=FALSE}
-counts_nojunk %>% prop.table(margin = 2) %>% '*' (100) %>% round(2)
-```
 
-\newpage
-# Part II
-# Calculate CBR
-```{r, CBR, echo=TRUE}
+
+Figure \@ref(fig:rawcts) and Table \@ref(tab:counts) display the distribution of vocalization categories across the six corpora. Canonical babbles constituted just `r round(NROW(War[which(War$Answer=='Canonical'),]) / NROW(War$Answer),4)*100`% of the `r NROW(War)` clips from the three children in the Warlaumont corpus, the corpus containing the youngest children (age 0;3). Canonical clips made up a larger percentage (`r round(NROW(Cychosz[which(Cychosz$Answer=='Canonical'),]) / NROW(Cychosz$Answer),4)*100`%; N=`r NROW(Cychosz[which(Cychosz$Answer=='Canonical'),])`) of the `r NROW(Cychosz)` total analyzed clips in the Cychosz corpus (children aged 1;10-2;1). Canonical clips likewise constituted (`r round(NROW(Tse[which(Tse$Answer=='Canonical'),]) / NROW(Tse$Answer),4)*100`%; N=`r NROW(Tse[which(Tse$Answer=='Canonical'),])`) of the `r NROW(Tse)` total clips in the Tseltal corpus (aged 0;2-3;0). Laughing annotations only made up `r round(min(data2$laugh_prop),2)` - `r round(max(data2$laugh_prop),2)`% of the corpora and crying  `r round(min(data3$cry_prop),2)` - `r round(max(data3$cry_prop),2)`%. We discuss reasons behind the limited presence of crying and laughter in some of the corpora in the Discussion.  
+
+
+
+
+```{r, include=FALSE}
+# get data in line for upcoming plots; make some tables
+
+#CBR by corpus
 CBR <- subset(data, Answer=='Non_canonical' | Answer=='Canonical')
 CBR$Answer <- droplevels(as.factor(CBR$Answer))
 rat <- table(CBR$Answer, CBR$corpus)
 new_tab <- addmargins(rat, FUN = list(Total = sum), quiet = TRUE)
-
 final <- rbind(new_tab, new_tab[1,] / new_tab[3,]) # create CBR
 rownames(final)[4]<-"CBR"
 round(final,2)
+
+
+### now make table
+age_tab <- table(CBR$unq_childID, CBR$Answer)
+age_tab2 <- addmargins(age_tab, FUN = list(Total = sum), quiet = TRUE)
+
+# add ratio
+final_age <- cbind(age_tab2, age_tab2[,1 ] / age_tab2[,3 ]) # calculate CBR
+colnames(final_age)[4]<-"Ratio"
+round(final_age,2)
+
+new <- cbind(rownames(final_age), final_age)
+rownames(new) <- NULL
+new <- new[-nrow(new),] # remove "total" row
+
+colnames(new)[1]<-"Corpus and Child ID"
+new <- as.data.frame(new)
+#new$unq_childID <- sub(".*? (.+)", "\\1", new$`Corpus and Child ID`)# create child ID variable
+new$unq_childID <- new$'Corpus and Child ID'
+final <- merge(CBR, new, by = c("unq_childID")) # finally add ratio variable to CBR
+final$age_mo_round <- as.numeric(final$age_mo_round)
+
+
+
+bbz <- subset(final, age_mo_round<=9)
+oldr <- subset(final, age_mo_round>9 & age_mo_round<=17)
+
+bbz$Ratio <- as.numeric(as.character(bbz$Ratio)) # to avoid losing information when converting to numeric 
+oldr$Ratio <- as.numeric(as.character(oldr$Ratio))
 ```
 
-\newpage
-# CBR by age (months): all corpora 
-note that each age group can contain multiple children
-```{r, age_analysis, echo=TRUE}
 
+
+## Results by age
+
+We next calculated CBR and CBO from the reliably-annotated clips. To calculate CBR, all of the clips labelled as canonical sounds were divided by the total number of clips labelled as canonical or non-canonical sounds. To calculate CBO, the measurement reflecting traditional parental reports of canonical babbling presence, we counted the number of canonical clips in each child's repetoire: canonical babble was said to have begun if a child had 10 or more canonical clips. 
+
+```{r, age-table, echo=FALSE, fig.align='center'}
+CBR$age_mo_round <- as.numeric(CBR$age_mo_round)
 age_tab <- table(CBR$age_mo_round, CBR$Answer)
 age_tab2 <- addmargins(age_tab, FUN = list(Total = sum), quiet = TRUE)
 
 final_age <- cbind(age_tab2, age_tab2[,1 ] / age_tab2[,3 ]) # calculate CBR
 colnames(final_age)[4]<-"Ratio"
-round(final_age,2)
+
+# defaults to reorder age??
+
+knitr::kable(round(final_age,2), caption = 'Counts of canonical to non-canonical clips and CBR \n by child age (months): all corpora. Note that each age bracket can contain children from multiple corpora.')
+
 ```
 
+```{r, age-hist, fig.width=10, fig.asp=.42, fig.cap = 'Canonical babbling ratio by age (months)', echo=FALSE}
+# visualize by age
 
-```{r, prepare df to plot, include=FALSE}
-new <- cbind(rownames(final_age), final_age)
-rownames(new) <- NULL
-new <- new[-nrow(new),] # remove "total" row
-
-colnames(new)[1]<-"age_mo_round"
-new <- as.data.frame(new)
-
-
-final <- merge(CBR, new, by = c("age_mo_round")) # add ratio variable to CBR
-final$age_mo_round <- as.numeric(final$age_mo_round)
-```
-
-\newpage
-```{r, visualize CBR by corpus, echo=FALSE, message=FALSE}
-#install.packages('plyr')
-library('plyr')
-final$corpus.CBR <- revalue(final$corpus, c("Warlaumont"="Warlaumont \n 0.19", "Seedlings"="Seedlings \n 0.16", "Tsimane"="Tsimane \n 0.25", "Cychosz"="Cychosz \n 0.41", "Tseltal"="Tseltal \n 0.36"))
-detach(package:plyr)
-
-final %>% 
-  count(corpus.CBR, Answer) %>%
-  mutate(group = factor(corpus.CBR)) %>% 
-  ggplot(aes(corpus.CBR, n)) + 
-  geom_col(aes(fill = Answer)) +
-  xlab("corpus and CBR") + 
-  ggtitle("Canonical babbling ratio by corpus")
-```
-
-
-
-
-```{r visualize CBR by age, echo=FALSE}
 final %>%
  count(age_mo_round, Answer) %>%
  mutate(group = factor(age_mo_round)) %>%
@@ -251,137 +240,296 @@ final %>%
  xlab("Age in Months") +
  guides(fill=guide_legend(title="Syllable type")) +
  scale_x_discrete(limits=c(final$age_mo_round)) +
- ggtitle("Canonical babbling ratio by age (months)")
+  ylab('Number of annotated clips') + 
+ ggtitle("Canonical babbling ratio by age (months)") +
+  theme(plot.title = element_text(size = 18), text = element_text(size=15))
 ```
 
-# Calculate each child's CBR 
-```{r, prepare for correlations, echo=FALSE}
+
+```{r, include=FALSE}
+# calculate binary +/- canonical babbling has begun 
+
+final %>%
+  group_by(child_ID, corpus, Answer) %>%
+  count() %>%
+  spread(key=Answer, value=n, fill=0) %>%
+  mutate(Canon_count=Canonical)
+
+final$Canonical <- as.numeric(as.character(final$Canonical))
+
+# boolean to define babbling has having onset if >=10 "canon" clips
+final$CBO <- final$Canonical >= 10
+
+```
+
+
+As CBR is predicted to increase with age, we first examined CBR growth over time, irrespective of corpus or individual child. Figure \@ref(fig:age-hist) and Table \@ref(tab:age-table) display CBR by child age (in months).
+
+
+```{r, include=FALSE, fig.align='center'}
+# get only unique entries
+final$Ratio <- as.numeric(as.character(final$Ratio))
+uniqchild <- final[!duplicated(final$unq_childID),]
+
+# calculate how many children in each age bracket
+child_age_ct <- uniqchild %>%
+  select(c("age_mo_round","unq_childID"))%>%
+  unique() %>%    
+  group_by(age_mo_round) %>%  
+  count()
+
+#sum(child_age_ct$n) # sanity check: should be 52 unique children
+
+# combine with df
+uniqchild <- merge(child_age_ct, uniqchild, by = 'age_mo_round') 
+uniqchild$number_of_children <- uniqchild$n
+uniqchild$number_of_children <- as.factor(uniqchild$number_of_children)
+
+
+# make subgroups by corpus for uniqchild
+uniqchild$age_in_days.y <- as.numeric(uniqchild$age_in_days.y)
+Seedlings <- uniqchild %>% filter(corpus == "Seedlings")
+Tseltal <- uniqchild %>% filter(corpus == "Tseltal")
+Yeli <- uniqchild %>% filter(corpus == "Yeli")
+Tsimane <- uniqchild %>% filter(corpus == "Tsimane")
+
+
+# calculate correlations
+allcor <- cor.test(uniqchild$age_in_days.y, uniqchild$Ratio, method=c("pearson"))
+CBOcor <- cor.test(uniqchild$age_in_days.y, uniqchild$Canonical, method=c("pearson"))
+
+Tsicor <- cor.test(Tsimane$age_in_days.y, Tsimane$Ratio, method=c("pearson"))
+Seecor <- cor.test(Seedlings$age_in_days.y, Seedlings$Ratio, method=c("pearson"))
+Tsecor <- cor.test(Tseltal$age_in_days.y, Tseltal$Ratio, method=c("pearson"))
+Yelicor <- cor.test(Yeli$age_in_days.y, Yeli$Ratio, method=c("pearson"))
+
+TsiCBO <- cor.test(Tsimane$age_in_days.y, Tsimane$Canonical, method=c("pearson"))
+SeeCBO <- cor.test(Seedlings$age_in_days.y, Seedlings$Canonical, method=c("pearson"))
+TseCBO <- cor.test(Tseltal$age_in_days.y, Tseltal$Canonical, method=c("pearson"))
+YeliCBO <- cor.test(Yeli$age_in_days.y, Yeli$Canonical, method=c("pearson"))
+    
+    
+             
+```
+
+ 
+```{r, mainplot, warning=FALSE, echo=FALSE, fig.cap='Canonical babbling ratio by child age and corpus. \n Number_of_children refers to number of children in that age bracket (in months)'}
+# plotting by days instead of months avoids more point overlap and we don't have to rely as much on jitter
+ggplot(uniqchild, aes(age_in_days.y, Ratio))+
+ geom_jitter(aes(color = corpus, size=number_of_children),position = position_jitter(width = 0.07, height = .01)) + # jitter overlapping pts
+   scale_x_continuous(breaks=seq(0,1000,200), name = "Age (days)", sec.axis = sec_axis(~./30, name = "Age (months)", breaks=seq(0,35,5))) + 
+  scale_y_continuous(name="Canonical babbling ratio", breaks=seq(0,0.7,0.05)) + 
+ ggtitle("Canonical babbling ratio by child age and corpus") + 
+         #subtitle ='Number_of_children refers to number of children in that age bracket (in months)') + 
+ geom_smooth(method = "lm", color="black")
+   #stat_cor(aes(method = "pearson", label.x = 20, label.y = .5, label = ..r..), size=6)
+
+```
+ 
+As anticipated, CBR appears to increase over development. When measuring development across all corpora, Figure \@ref(fig:mainplot) shows a positive trend throughout development (Pearson: R=`r round(allcor$estimate,2)`, [CI = `r round(allcor$conf.int,2)`], p<.001). This correlation statistic reflects the relationship between children's age in days, not months (the figure maps both age in days and age in months to aid interpretablity).  
+ 
+More specifically, between the ages of 0;2 and 0;9 (inclusive), participants' (n=`r NROW(unique(bbz$child_ID))`) CBR averaged just `r round(mean(bbz$Ratio),2)` (SD=`r round(sd(bbz$Ratio),2)`). Over the next 7 months, between 0;10-1;5, the average CBR for the n=`r NROW(unique(oldr$child_ID))` children in that age group was `r round(mean(oldr$Ratio),2)` (SD=`r round(sd(oldr$Ratio),2)`). Consequently, a CBR of .15 (a value reported as a 10 month target in the literature) appears to occur between approximately 10 and 17 months. There was, however, considerable variability. While children's CBR grew over development, one child aged 0;7 already had a CBR of .21 while another aged 1;3 only had a reported CBR of .08. See Appendix for a complete breakdown of canonical babbling ratios by individual child, including child age and corpus of origin. 
+
+```{r cbo-age, fig.cap='Canonical babble onset by child age. Horizontal orange line indicates canonical babble onset threshold.', echo=FALSE, warning=FALSE}
+
+# plotting by days instead of months avoids more point overlap and we don't have to rely as much on jitter
+ggplot(uniqchild, aes(age_in_days.y, Canonical))+
+  geom_hline(aes(yintercept=10), color='orange', size=1, linetype='solid') +
+ #geom_jitter(aes(color = corpus, size=number_of_children),position = position_jitter(width = 0.07, height = .01)) + # jitter overlapping pts
+  geom_point(aes(color=corpus, size=number_of_children)) + 
+   scale_x_continuous(breaks=seq(0,1000,200), name = "Age (days)", sec.axis = sec_axis(~./30, name = "Age (months)", breaks=seq(0,35,5))) + 
+  scale_y_continuous(name="Number of canonical clips", breaks=seq(0,135,10)) + 
+ ggtitle("Onset of canonical babble by child age and corpus") + 
+         #subtitle ='Number_of_children refers to number of children in that age bracket (in months)') + 
+ geom_smooth(method = "lm", color="black")
+
+
+
+```
+
+
+```{r, include=FALSE}
+tenup <- uniqchild %>%
+  filter(age_mo_round >= 10 & CBO=='FALSE') %>%
+  nrow()
+
+```
+
+We determined that canonical babble had emerged in a child's speech when the child produced 10 or more canonical babble clips. Figure \@ref(fig:cbo-age) displays the positive relationship between CBO and child age: (Pearson R: `r round(CBOcor$estimate,2)`, [CI = `r round(CBOcor$conf.int,2)`], p<.001). Unsurprisingly, children produed more canonical babbles as they aged. This correlation reflects the relationship between number of canonical babbles and child age in days, not months, though both days and months are displayed on the plot. CBO is said to occur around age 0;10 and this finding is replicated in these data. Only n=`r tenup` children over the age of 0;10 did not meet the requisite n=10 canonical babbles: one child each from the Cychosz, Tseltal, and Yeli corpora. The child from the Yeli corpus likewise had a low CBR (0.03). The children from the Tseltal and Cychosz corpora, however, had high CBRs (0.25 and 0.23, respectively), but a small number of total clips analyzed (n=36 and n=35, respectively). The mismatch between CBR and CBO for these children indicates that a large amount of these children's clips were classified unrelibly/as junk, thus we may be underreporting the quantity of canonical babbles that these children produced. Overall, however, these data suggest that most children achieve a CBR of 0.15 by 1;1, with some exceptions, and that CBO occurs between 0;10 and 1;1.  
+
+ 
+
+## Results by corpus
+
+Next, we examined how CBR and CBO patterned by each language. There did not appear to be significant differences in CBR growth between corpora. However, two Tsimane children, one aged 2;6 and another 2;8, were notable low outliers with CBRs of 0.11 and 0.09, respectively. Additionally, one child from the Tseltal corpus, aged 0;11, is a high outlier with a CBR of 0.43. 
+
+  
+
+```{r, fourcorpora, echo=FALSE,  warning=FALSE, fig.cap = 'Canonical babbling ratio by child age (months) across four corpora', warning=FALSE}
+# select corpora with age ranges
+subcor <- uniqchild %>%
+  filter(corpus != "Cychosz" & corpus != 'Warlaumont')
+
+
+ggplot(subcor, aes(age_mo_round, Ratio, color=corpus, fill=corpus))+
+     geom_point(aes(size=.1, show.legend = FALSE, cor.coef = TRUE)) + 
+ geom_smooth(method = "lm") +
+   scale_x_continuous(name="Age (months)", breaks=seq(0,35,5)) + 
+  scale_y_continuous(name="Canonical babbling ratio", breaks=seq(0,0.7,0.05)) + 
+  facet_grid(~corpus) + 
+    theme(strip.text.x = element_text(size = 10, face='bold')) + 
+  theme(legend.position = "none") + 
+ ggtitle("Canonical babbling ratio by child age (months) \n across four corpora")  
+  #stat_cor(aes(method = "pearson", label = ..r.label.., label.y=.8), size=5) # currently reporting incorrect correlations
+
+
+```
+
+```{r, fourcorporaCBO, fig.cap='Canonical babbling onset by child age (months) across four corpora. Horizontal orange line indicates canonical babble onset threshold.', echo=FALSE, warning=FALSE}
+
+
+ggplot(subcor, aes(age_mo_round, Canonical, color=corpus, fill=corpus))+
+    geom_hline(aes(yintercept=10), color='orange', size=1, linetype='solid') +
+     geom_point(aes(size=.1, show.legend = FALSE, cor.coef = TRUE)) + 
+ geom_smooth(method = "lm") +
+   scale_x_continuous(name="Age (months)", breaks=seq(0,35,5)) + 
+  scale_y_continuous(name="Number of canonical clips", breaks=seq(0,135,10)) + 
+  facet_grid(~corpus) + 
+    theme(strip.text.x = element_text(size = 10, face='bold')) + 
+  theme(legend.position = "none") + 
+ ggtitle("Canonical babbling onset by child age (months) \n across four corpora")  
+
+
+```
+
+Figure \@ref(fig:fourcorpora) and Figure \@ref(fig:fourcorporaCBO) further break down CBR and CBO analyses by corpus and show the developmental trend for those corpora that contained a large cross-sectional sample of ages (Tsimane, Tseltal, Yeli, and Seedlings). CBR increased with age in each corpus with the following Pearson correlations: Tsimane (R=`r round(Tsicor$estimate,2)`, [CI = `r round(Tsicor$conf.int,2)`], p=`r round(Tsicor$p.value,3)`, spanning 13-32 months), Tseltal (R=`r round(Tsecor$estimate,2)`, [CI = `r round(Tsecor$conf.int,2)`], p<.001, 2-36 months), Yeli (R=`r round(Yelicor$estimate,2)`, [CI = `r round(Yelicor$conf.int,2)`], p<.001, 2-36 months), and Seedlings (R=`r round(Seecor$estimate,2)`, [CI = `r round(Seecor$conf.int,2)`], p=`r round(Seecor$p.value,2)`, 7-17 months). The weakest relationship between CBR and Age was evident in the Tsimane corpus, which showed high variability between participants and an insignificant relationship between age and CBR. Furthermore, as discussed above, two older children in the Tsimane corpus, aged 2;6 and 2;8, had lower CBRs of 0.11 and 0.09. The weaker relationship between Age and CBR in the Seedlings corpus is likely due to the smaller range of ages sampled (0;7-1;5).
+
+For the CBO analysis, the number of canonical clips also increased with age in each corpus: Tsimane (R=`r round(TsiCBO$estimate,2)`, [CI = `r round(TsiCBO$conf.int,2)`], p=`r round(TsiCBO$p.value,2)`, spanning 13-32 months), Tseltal (R=`r round(TseCBO$estimate,2)`, [CI = `r round(TseCBO$conf.int,2)`], p<.001, 2-36 months), Yeli (R=`r round(YeliCBO$estimate,2)`, [CI = `r round(YeliCBO$conf.int,2)`], p<.001, 2-36 months), and Seedlings (R=`r round(SeeCBO$estimate,2)`, [CI = `r round(SeeCBO$conf.int,2)`], p=`r round(SeeCBO$p.value,2)`, 7-17 months). However, the positive relationship was weaker, and insignificant, in the Tsimane corpus. The relationship between canonical syllables and age was also insignificant in the Seedlings corpus, possibly because due to the smaller age range represented. 
+
+Although the relationship between canonical babble counts and age was weaker in the Tsimane corpus, all of the Tsimane children passed the CBO threshold. Canonical babbles had begun even for the youngest children in the Tsimane corpus (ID 36), aged 0;7, with n=29 canonical babbles out of a total of 137 speech-like sounds. Consequently, while the positive relationship between canonical babbles and age may appear weaker in the Tsimane data, it could also be because canonical babble onset occurs at a younger age. 
+
+
+## Results by gender
+
+```{r, include=FALSE, warning=FALSE}
+library('plyr')
+uniqchild$gender <- revalue(uniqchild$child_sex, c("F"="Female", "M"="Male"))
+detach(package:plyr)
+
+
+m <- uniqchild %>% filter(child_sex=='M') 
+f <- uniqchild %>% filter(child_sex=='F') 
+mcor <- cor.test(m$age_mo_round, m$Ratio, method=c("pearson"))
+fcor <- cor.test(f$age_mo_round, f$Ratio, method=c("pearson"))
+
+mCBOcor <- cor.test(m$age_mo_round, m$Canonical, method=c("pearson"))
+fCBOcor <- cor.test(f$age_mo_round, f$Canonical, method=c("pearson"))
+```
+
+
+
+```{r, genderplot, fig.cap = 'Canonical babbling ratio \n by child age (months) and gender', echo=FALSE}
+
+
+ggplot(uniqchild, aes(age_mo_round, Ratio, color=corpus, shape=gender)) +
+  geom_smooth(method = "lm", color='black') +
+    geom_point(size=3, position='jitter') +
+   scale_x_continuous(name="Age (months)", breaks=seq(0,35,5)) + 
+  scale_y_continuous(name="Canonical babbling ratio", breaks=seq(0,0.7,0.05)) + 
+  facet_grid(~gender) +
+  theme(strip.text.x = element_text(size = 10, face='bold'))+ 
+  ggtitle("Canonical babbling ratio \n by child age (months) and gender")
+
+
+```
+
+```{r, genderCBO, fig.cap = 'Canonical babbling onset \n by child age (months) and gender. Horizontal orange line indicates canonical babble onset threshold.', echo=FALSE}
+
+
+ggplot(uniqchild, aes(age_mo_round, Canonical, color=corpus, shape=gender)) +
+  geom_smooth(method = "lm", color='black') +
+      geom_hline(aes(yintercept=10), color='orange', size=1, linetype='solid') +
+    geom_point(size=3, position='jitter') +
+   scale_x_continuous(name="Age (months)", breaks=seq(0,35,5)) + 
+  scale_y_continuous(name="Canonical babbling onset", breaks=seq(0,135,10)) + 
+  facet_grid(~gender) +
+  theme(strip.text.x = element_text(size = 10, face='bold'))+ 
+  ggtitle("Canonical babbling onset \n by child age (months) and gender")
+
+
+```
+
+Finally, we analyzed how CBR and CBO varied with respect to each child's assigned gender. Figures \@ref(fig:genderplot) and \@ref(fig:genderCBO) plot CBR and CBO for all corpora, split by gender for the n=`r NROW(m)` male and n=`r NROW(f)` female children. CBR was positively correlated with child age for female (R=`r round(fcor$estimate, 2)`, [CI = `r round(fcor$conf.int, 2)`], p<.001) and male children (R=`r round(mcor$estimate, 2)`, [CI = `r round(mcor$conf.int, 2)`], p<.001), but the correlation was stronger for the female children. We thus replicate the finding that female children's CBR trends slightly higher with age than male children's CBR. The difference in slope between male and female children is likely not attributable to age, either, since our female sample was, on average, younger than the male sample: average age of n=`r NROW(m)` males in the sample was `r round(mean(m$age_mo_round),2)` (SD=`r round(sd(m$age_mo_round),2)`) months and the average age of n=`r NROW(f)` females was `r round(mean(f$age_mo_round),2)` (SD=`r round(sd(f$age_mo_round),2)`) months.  
+
+```{r, include=FALSE}
+oldboyz_ct <- uniqchild %>%
+  filter(age_mo_round >= 10 & gender=='Male') %>%
+  nrow()
+oldgirlz_ct <- uniqchild %>%
+  filter(age_mo_round >= 10 & gender=='Female') %>%
+  nrow()
+
+
+oldboyz_avg <- uniqchild %>%
+  filter(age_mo_round >= 10 & gender=='Male') %>%
+  select("Canonical") %>%
+  colMeans() %>%
+  round(2)
+oldgirlz_avg <- uniqchild %>%
+  filter(age_mo_round >= 10 & gender=='Female') %>%
+  select("Canonical") %>%
+  colMeans() %>%
+  round(2)
+```
+
+Concerning CBO results by gender, the relationship between number of canonical babbles and age (in months) was stronger for female children than male: female (R=`r round(fCBOcor$estimate, 2)`, [CI = `r round(fCBOcor$conf.int, 2)`], p<.001) and male children (R=`r round(mCBOcor$estimate, 2)`, [CI = `r round(mCBOcor$conf.int, 2)`], p= `r round(mCBOcor$p.value,3)` ), indicating that as female children age, they produce more canonical babbles than male children. Furthermore, while there are two male children, and one female, over the age of 0;10 who do not produce the n=10 canonical babble threshold for CBO, there are more male children with lower canonical babble counts than female children. For the n=`r oldgirlz_ct` female and n=`r oldboyz_ct` male children over the age of 0;10, throughout all of the corpora, the average canonical babble count is `r oldgirlz_avg` for the female children and  `r oldboyz_avg` for the male children. 
+
+## Appendix
+```{r, by-child table, include=FALSE}
+CBR$allmeta <- paste(CBR$unq_childID, paste("(",CBR$age_mo_round),")")
+
 # show data
-bydays <- table(CBR$age_in_days, CBR$Answer)
-bydays <- addmargins(bydays, FUN = list(Total = sum), quiet = TRUE)
-bydays2 <- cbind(bydays, bydays[,1 ] / bydays[,3 ]) # calculate CBR
-colnames(bydays2)[4]<-"Ratio"
-round(bydays2,2)
+bymonths <- table(CBR$allmeta, CBR$Answer)
+bymonths <- addmargins(bymonths, FUN = list(Total = sum), quiet = TRUE)
+bymonths2 <- cbind(bymonths, bymonths[,1 ] / bymonths[,3 ]) # calculate CBR
+colnames(bymonths2)[4]<-"Ratio"
+bymonths2 <- round(bymonths2,2)
 
-# create df from table to work with
-bydays2 <- bydays2[-nrow(bydays2),] # remove "total" row
-daysdf <- cbind(rownames(bydays2), data.frame(bydays2, row.names=NULL))
-colnames(daysdf)[1]<-"age_in_days"
+mat <- as.matrix(bymonths2)
+names(dimnames(mat)) <- c("Corpus Child ID (Age in months)", "")
+
 ```
 
-```{r, prepare data, echo=FALSE}
-daysdf$age_in_days <- as.numeric(as.character(daysdf$age_in_days))
-daysdf <- merge(daysdf, CBR, by = c("age_in_days")) 
+```{r, print matrix, echo=FALSE, comment=NA}
+mat
 ```
 
-```{r,  plot correlation, echo=FALSE}
-ggplot(daysdf, aes(age_mo_round, Ratio))+
- geom_point(aes(color = corpus)) +
- labs(x = "Age (months)", y = "Canonical babbling ratio") +
- ggtitle("Canonical babbling ratio by child age (months)") +
- geom_smooth(method = "lm", color="black") +
- stat_cor(method = "pearson", label.x = 10, label.y = .6)
-```
+```{r, include=FALSE}
+#CBO and CBR by individual child 
+# not using this table, but includes extra info
 
-```{r, CBR by months, echo=FALSE}
-ggplot(daysdf, aes(age_mo_round, Ratio, color=corpus, fill=corpus))+
- geom_smooth(method = "lm") +
- geom_point() +
- labs(x = "Age (months)", y = "Canonical babbling ratio") +
- ggtitle("Canonical babbling ratio by child age (months)", subtitle = 'This graph will be better once we have more data')
-```
+CBO <- data
+CBO$allmeta <- paste(CBO$unq_childID, paste("(",CBO$age_mo_round),")")
 
-# Age by corpus
-```{r plot age*corpus, echo=FALSE}
-p <- final %>%
- count(age_mo_round, Answer, corpus) %>%
- mutate(group = factor(age_mo_round)) %>%
- ggplot(aes(age_mo_round, n)) +
- geom_col(aes(fill = Answer)) +
- xlab("Age in Months") +
- guides(fill=guide_legend(title="Syllable type")) +
- ggtitle("Canonical babbling ratio by age (months) and corpus")
 
- p + facet_wrap(~corpus)
-```
 
-# A very Euro-centric analysis
-```{r culture_analysis, echo=FALSE, message=FALSE}
-library('plyr')
-final$region <- revalue(final$corpus, c("Warlaumont"="N_American", "Seedlings"="N_American", "Tsimane"="Elsewhere", "Cychosz"="Elsewhere", "Tseltal"="Elsewhere"))
-detach(package:plyr)
+onset <- table(CBO$allmeta, CBO$Answer)
 
-final %>%
- count(region, Answer) %>%
- mutate(group = factor(region)) %>%
- ggplot(aes(region, n)) +
- geom_col(aes(fill = Answer)) +
- xlab("Region") +
- guides(fill=guide_legend(title="Syllable type")) +
- ggtitle("Canonical babbling ratio by region")
-```
+# here we calculate % canon syllables, but we ended up defining CBO as >10 canon clips
+new_ons <- addmargins(onset, FUN = list(Total = sum), quiet = TRUE)
+final_ons <- cbind(new_ons, new_ons[,1] / new_ons[,5]) # calculate % canon syllables
 
-# CBR by Region and Age
-```{r, plot age*region, echo=FALSE}
-final %>%
- count(age_mo_round, Answer, region) %>%
- mutate(group = factor(age_mo_round)) %>%
- ggplot(aes(age_mo_round, n)) +
- geom_col(aes(fill = Answer)) +
- facet_wrap(~region) +
- xlab("Age in Months") +
- guides(fill=guide_legend(title="Syllable type")) +
- ggtitle("Canonical babbling ratio by age (months) and region")
-```
+final_ons2 <- cbind(final_ons, final_ons[,1] + final_ons[,4]) # total canon + non-canon
+final_ons3 <- cbind(final_ons2, final_ons2[,1 ] / final_ons2[,7 ]) # calculate CBR
 
-```{r, map values, message=FALSE, echo=FALSE}
-library('plyr')
-daysdf$Region <- revalue(daysdf$corpus, c("Warlaumont"="N_American", "Seedlings"="N_American", "Tsimane"="Elsewhere", "Cychosz"="Elsewhere", "Tseltal"="Elsewhere"))
-detach(package:plyr)
-```
+colnames(final_ons3)[6]<-"% Canonical"
+colnames(final_ons3)[7]<-"Canon + Non-canon"
+colnames(final_ons3)[8]<-"CBR"
 
-```{r, correlate age in days by CBR, echo=FALSE, eval=FALSE}
-ggplot(daysdf, aes(age_in_days, Ratio)) +
- geom_point(aes(color=Region)) +
- #scale_color_manual(values=c("forestgreen", "#E69F00")) + 
- labs(x = "Age (days)", y = "Canonical babbling ratio") +
- ggtitle("Canonical babbling ratio by child age (days) and region") +
- geom_smooth(method = "lm", color="black") +
- stat_cor(method = "pearson", label.x = 150, label.y = .5)
-```
 
-```{r, correlate age in months by CBR, echo=FALSE}
-daysdf$age_mo_round <- as.numeric(daysdf$age_mo_round)
-ggplot(daysdf, aes(age_mo_round, Ratio)) +
- geom_point(aes(color=Region)) +
- #scale_color_manual(values=c("forestgreen", "#E69F00")) + 
- labs(x = "Age (months)", y = "Canonical babbling ratio") +
- ggtitle("Canonical babbling ratio by child age (months) and region") +
- geom_smooth(method = "lm", color="black") +
- stat_cor(method = "pearson", label.x = 8, label.y = .6)
+final_ons3 <- round(final_ons3,2)
 
-ggplot(daysdf, aes(age_mo_round, Ratio, color=Region, fill=Region)) +
- geom_smooth(method = "lm") +
- geom_point() +
- labs(x = "Age (months)", y = "Canonical babbling ratio") +
- ggtitle("Canonical babbling ratio by child age (months) and region")
-```
+final_ons3[-nrow(final_ons3),] # remove "total" row
 
-# CBR by gender
-```{r, gender plots, echo=FALSE}
-ggplot(daysdf, aes(age_mo_round, Ratio)) +
-  geom_point(aes(color=child_sex)) +
-  scale_color_manual(values=c("royalblue3", "tomato3")) +
-  geom_smooth(method = "lm", color="black") +
-  labs(x = "Age (months)", y = "Canonical babbling ratio") +
-  ggtitle("Canonical babbling ratio by child age (months) and gender") +
-  stat_cor(method = "pearson", label.x = 8, label.y = .6)
-
-p2 <- ggplot(daysdf, aes(age_mo_round, Ratio)) +
-  geom_point(aes(color=child_sex)) +
-  scale_color_manual(values=c("royalblue3", "tomato3")) +
-  labs(x = "Age (months)", y = "Canonical babbling ratio") +
-  ggtitle("Canonical babbling ratio by child age (months), gender, & corpus")
-p2 + facet_wrap(~corpus)
 
 ```
