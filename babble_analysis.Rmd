@@ -1,0 +1,86 @@
+---
+title: "babble_results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_data}
+library(tidyverse)
+data <- read_csv("part6_answers.csv", col_types = cols(.default = "c"))
+```
+
+```{r analysis}
+nb_answers <- data %>%
+  group_by(file) %>%
+  count()
+
+print(paste('number of unique clips', nrow(nb_answers)))
+
+not_finished <- nb_answers %>%
+  filter(n<=2)
+
+print(paste('number of clips w/o three annotations', nrow(not_finished)))
+
+three_answers <- nb_answers %>%
+  filter(n>=3)
+
+print(paste('number of clips w/ at least three annotations', nrow(three_answers)))
+
+agreement <- data %>%
+  filter(file %in% three_answers$file) %>% 
+  unique() %>%
+  group_by(file) %>%
+  count() %>%
+  filter(n==1)
+
+non_agreement <- data %>%
+  filter(file %in% three_answers$file) %>%
+  unique() %>%
+  group_by(file) %>%
+  count() %>%
+  filter(n>1)
+
+majority_agreement <- data %>%
+  filter(file %in% three_answers$file) %>% # only get files from 'data' that have three answers
+  unique() %>%
+  group_by(file) %>%
+  count() %>%
+  filter(n==2)
+
+```
+
+```{r visualization}
+
+viz <- data %>%
+  filter(file %in% agreement$file)
+
+ggplot(viz, aes(category)) +
+  geom_histogram(stat="count")
+
+# viz2 <- data %>%
+#   filter(file %in% majority_agreement$file)
+# 
+# ggplot(viz2, aes(category)) +
+#   geom_histogram(stat="count")
+  
+
+```
+
+```{r analysis_concat_laugh_cry}
+data_laugh_cry <- data %>%
+  mutate(cat = ifelse(category=='Laughing', 'Crying', category)) %>%
+  select(c(file, cat))
+
+agreement_laugh_cry <- data_laugh_cry %>%
+  filter(file %in% three_answers$file) %>%
+  unique() %>%
+  group_by(file) %>%
+  count() %>%
+  filter(n==1)
+
+
+
+```
