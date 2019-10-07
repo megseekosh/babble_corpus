@@ -1,0 +1,252 @@
+---
+title: "restitch_clips"
+author: "Meg Cychosz"
+date: "4/22/2019"
+output: pdf_document
+---
+
+```{r, setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, load necessary packages, include = FALSE}
+library('doBy')
+library('dplyr')
+library('tidyverse')
+library('ggplot2')
+library('ggpubr')
+```
+
+```{r, import_data, include=FALSE}
+data.in <- read_csv("metadata_answers_global_noRAM.csv", col_types = cols(.default = "c"))
+data.in[data.in=="Non-canonical"] <- "Non_canonical"
+data.in[is.na(data.in)] <- "No_answer"
+data.in$chunk_id <- gsub("\\..*","",data.in$chunk_id) # remove the .wav
+data.in$chunk_id <- substring(data.in$chunk_id, 2) # remove the first 0
+```
+
+```{r import linking keys, include=FALSE}
+link1 <- read_csv("mapping_clips_to_originals.csv", col_types = cols(.default = 'c')) # 8196
+link2 <- read_csv("Linking_file_Tsimane_Tseltal.csv", col_types = cols(.default = "c")) # 12549
+links <- rbind(link1, link2)
+```
+
+```{r merge the data with linking files}
+# merge data with linking files to restitch
+stitched <- merge(data.in, links, by = 'chunk_id')
+# remove any rows that are exactly the same
+stitched <- unique(stitched)
+```
+
+
+```{r, include=FALSE}
+if(any(grepl("package:plyr", search()))) detach("package:plyr") else message("plyr not loaded")
+```
+
+```{r index clips}
+# give each 400ms clip an index within the multisyllabic vocalization
+new_stitched <- stitched[order(as.numeric(stitched$begin.y),decreasing = FALSE), ]
+final <- new_stitched %>% 
+  group_by(corpus.y) %>% 
+  mutate(idx = match(begin.y, unique(begin.y))) %>%
+  as.data.frame
+```
+
+# How many multisyllabic clips have consistent patterns (e.g. bah bah bah)?
+```{r separate out mixed long clips (bah uh bah) }
+
+final2 <- final %>% 
+  group_by(corpus.y) %>% # group by the big clip
+  mutate(all_agree = ifelse(length(unique(Answer)) <= 1, 'consistent', 
+                        ifelse(length(unique(Answer) > 1) & 
+                            (length(unique(Answer)) >= 2), 'not_consist', 'not_consist'))) %>% 
+  as.data.frame
+```
+
+
+```{r some info on consistency within larger clips}
+answer_count <- final2 %>%
+  group_by(corpus.y) %>%
+  count()
+print(paste("Number of unique multisyllabic clips:",nrow(answer_count)))
+
+# super stringent criterion
+# 100% annotator agreement
+unidf <- subset(final2, !duplicated(corpus.y))
+unidf$all_agree <- as.factor(unidf$all_agree)
+print(paste("Number of multisyllabic clips w/ same annotation (e.g. bah bah bah):",
+            nrow(unidf[which(unidf$all_agree=='consistent'),])))
+print(paste("Number of multisyllabic clips with different annotations (e.g. bah uh bah):",
+            nrow(unidf[which(unidf$all_agree=='not_consist'),])))
+```
+
+
+# Consistency using that super strict criterion:
+```{r}
+unidf %>% 
+  count(corpus.x, all_agree) %>%
+  mutate(group = factor(corpus.x)) %>% 
+  {
+  ggplot(., aes(corpus.x, n, fill=all_agree)) + 
+  geom_col(aes(fill = all_agree)) +
+  ggtitle("Within-multisyllabic clip consistency by corpus: \n raw counts (~n=4000)") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+
+# Relax the criteria a bit:
+## How many multisyllabic clips had majority agreement on each little clip? 
+```{r, message=FALSE}
+# first get majority agreement for the little clips,
+final2 <- final2 %>% 
+  count(corpus.y, chunk_id, Answer) %>%
+  group_by(corpus.y, chunk_id) %>% # group by little clips
+  mutate(share = n / sum(n)) %>% # get the proportion
+  summarize(agreement = max(share)) %>% # get the largest percentage
+  mutate(clip_agreement = if_else(agreement > 0.55, "consistent", "inconsistent")) %>%
+  ungroup() %>%
+  right_join(final2) 
+```
+
+```{r, message=FALSE}
+# then, based on agreement for little clips, get agreement over multisyllabic clip
+final3 <- final2 %>%
+  group_by(corpus.y) %>%
+  mutate(multisyllabic_agreement = if_else(any(clip_agreement=="inconsistent"), "inconsistent", "consistent")) %>%
+  ungroup() %>%
+  right_join(final2) 
+```
+
+
+```{r}
+unidf2 <- subset(final3, !duplicated(corpus.y))
+unidf2$multisyllabic_agreement <- as.factor(unidf2$multisyllabic_agreement)
+print(paste("Number of multisyllabic clips w/ majority agreement for all syllables:",
+            nrow(unidf2[which(unidf2$multisyllabic_agreement=='consistent'),])))
+print(paste("Number of multisyllabic clips w/o majority agreement for all syllables:",
+            nrow(unidf2[which(unidf2$multisyllabic_agreement=='inconsistent'),])))
+```
+
+## This is promising!
+```{r, visualize those multisyllabic clips w/ majority agreement*corpus}
+unidf2 %>% 
+  count(corpus.x, multisyllabic_agreement) %>%
+  mutate(group = factor(corpus.x)) %>% 
+  {
+  ggplot(., aes(corpus.x, n, fill=multisyllabic_agreement)) + 
+  geom_col(aes(fill = multisyllabic_agreement)) +
+  ggtitle("Majority agreement within-multisyllabic clips by corpus: \n raw counts (~n=4000)") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+
+```{r, message=FALSE}
+# delimit only multisyllabic clips that have good agreement across all syllables
+good_annotate <- final3[which(final3$multisyllabic_agreement=='consistent'),]
+
+good_annotate$corpus.y <- as.factor(good_annotate$corpus.y)
+good_annotate$Answer <- as.factor(good_annotate$Answer)
+
+# create variable for same (bah bah bah) versus varied (bah uh bah)
+good_annotate2 <- good_annotate %>% 
+  group_by(corpus.y) %>% # group by multisyllabic clips
+  summarise(n_answer = n_distinct(Answer)) %>%
+  mutate(multi_structure = if_else(n_answer > 1, "varied", "same")) %>%
+  ungroup() %>%
+  right_join(good_annotate) 
+```
+
+```{r}
+
+unidf3 <- subset(good_annotate2, !duplicated(corpus.y))
+
+print(paste("Number of multisyllabic clips w/ majority agreement and same syllables:",
+            nrow(unidf3[which(unidf3$multi_structure=='same'),])))
+print(paste("Number of multisyllabic clips w/ majority agreement and varied syllables:",
+            nrow(unidf3[which(unidf3$multi_structure=='varied'),])))
+
+```
+
+```{r, by corpus now}
+unidf3 %>% 
+  count(corpus.x, multi_structure) %>%
+  mutate(group = factor(corpus.x)) %>% 
+  {
+  ggplot(., aes(corpus.x, n, fill=multi_structure)) + 
+  geom_col(aes(fill = multi_structure)) +
+  ggtitle("Multisyllabic clips w/ majority agreement by corpus \n and internal structure: raw counts (~n=4000)") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+## We might expect this to vary with age
+```{r, by corpus}
+unidf3$age_mo_round <- as.numeric(unidf3$age_mo_round)
+
+unidf3 %>% 
+  count(age_mo_round, multi_structure) %>%
+  mutate(group = factor(age_mo_round)) %>% 
+  {
+  ggplot(., aes(age_mo_round, n, fill=multi_structure)) + 
+  geom_col(aes(fill = multi_structure)) +
+  scale_x_continuous(breaks=seq(2,36,2)) +
+  ggtitle("Multisyllabic clips w/ majority agreement by age \n and internal structure: raw counts (~n=4000)") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+```{r }
+# now delimit the same clips by type
+# (there are just too many variations of the varied category)
+same_annotate <- good_annotate2[which(good_annotate2$multi_structure=='same'),]
+
+# get unique multisyllabic clips only
+uni_same <- subset(same_annotate, !duplicated(corpus.y))
+```
+
+
+```{r}
+uni_same %>% 
+  count(corpus.x, Answer) %>%
+  mutate(group = factor(corpus.x)) %>% 
+  {
+  ggplot(., aes(corpus.x, n, fill=Answer)) + 
+  geom_col(aes(fill = Answer)) +
+  ggtitle("Types of same multisyllabic clips by corpus. \n Majority agreement. Mixed multisyllabic clips not pictured.") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+## Ok so maybe take junk out and visualize by age
+```{r, by corpus again}
+nojunk <- unidf3[which(unidf3$Answer=='Canonical' | unidf3$Answer=='Non_canonical'), ]
+
+nojunk %>% 
+  count(age_mo_round, multi_structure) %>%
+  mutate(group = factor(age_mo_round)) %>% 
+  {
+  ggplot(., aes(age_mo_round, n, fill=multi_structure)) + 
+  geom_col(aes(fill = multi_structure)) +
+  scale_x_continuous(breaks=seq(2,36,2)) +
+  ggtitle("Multisyllabic clips (only babbles) w/ majority agreement by age \n and internal structure: raw counts (~n=4000)") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```
+
+## now let's do just canonical
+```{r}
+canon <- unidf3[which(unidf3$Answer=='Non_canonical'), ]
+
+canon %>% 
+  count(age_mo_round, multi_structure) %>%
+  mutate(group = factor(age_mo_round)) %>% 
+  {
+  ggplot(., aes(age_mo_round, n, fill=multi_structure)) + 
+  geom_col(aes(fill = multi_structure)) +
+  scale_x_continuous(breaks=seq(2,36,2)) +
+  ggtitle("Multisyllabic clips (only babbles) w/ majority agreement by age \n and internal structure: raw counts (~n=4000)") + 
+  geom_text(aes(label=n), position=position_stack(0.5), size = 3)
+  } 
+```

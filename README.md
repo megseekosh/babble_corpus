@@ -30,29 +30,4 @@ from linking file and answer spreadsheet, retrieves:
 - total number of clips in this part
 - histogram of the length of utterances in this part
 
-## utt_and_clip_duration
-To use the script, you should change:
-- the path to the linking file
-- the corpus you want information on
 
-Script to retrieve :
-
-- at the clip level (max 500ms):
-  - mean duration
-  - sd of duration
-  - min clip duration
-  - max clip duration
-  
-- at the utterance level:
-  - mean duration
-  - sd of duration
-  - min utt duration
-  - max utt duration
-  
-## babble_analysis_raw_output
-  
-Reads output directly out of IHUP (currently for parts 6 and 7), looks at the distribution of the number of annotations per clip
-  
-## concat_all
-
-Read answers spreadsheets from all parts, concatenates them and looks for one coder annotating the same clips more than once
