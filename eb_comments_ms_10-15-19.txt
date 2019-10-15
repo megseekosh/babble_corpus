@@ -1,0 +1,56 @@
+Elika comments on https://www.overleaf.com/project/5d938d462cf8090001a6f212 manuscript, 10/15
+
+* abstract: i love writing abstracts, so happy to take that on
+* intro: 
+** 1.1 has some confusing flow, sentence fragments, etc. some points of confusion
+a) rather than immediately diving into ‘north american context’ and ‘english’ i think i’d probably say something like ‘generally, canonical babbling has been linked to xyz’ …BUT that was in north american settings/english. We’re just not sure if it holds globally, that’s one of the things we’d like to find out.
+b) the intro previews CBR without calling it that (which i think is good!) but it also makes it seem like .15 and 10months is claimed to be _GOD’S TRUTH_ and it’s not clear to me that Oller ever meant it that way
+c) things not in intro at all: CBO (i’m on board with a ‘layperson’s way to establish whether the child’ babbles) vs. a technical definition, but perhaps an explicit aim should be to see whether those actually diverge in what they tell us?
+d) gender. do we actually think there will be gender differences based o previous lit? i had no preconceived notions about that for babble; if anything i’d guess there would be no gender diffs, since my read is that those emerge at the lexical level. 
+
+** 1.2: first sentence mentions gaps but i’m not sure which gaps. also maybe describe lena (modal use case) before special case (audio+pics)—some flow/fragments here too.
+
+** 1.3. : questions 1:3 do not seems to come clearly from either claims or gaps highlighted by intro (and gender especially seems to come out of nowhere)
+
+METHODS
+* where did those mat ed #s come from? either weird rendering or wrong info (512?) should pull from table of participant info on our osf and make any conversion from original coding clear
+** 2.3: are we sure we had 100 utt’s from each of the 52 kids? i thought for tsi and yeli maybe it was actually way more than 100? i could be wrong
+** 2.4: info about the clip making is preprocessing not annotation procedure
+* should say something about LENA mandating CHN length which affected corpus A-C but not D-F or whatever
+* should clarify that e.g. a clip of 1400ms turned into 400+400+400+200
+** asterisk in table 2 doesn’t go anywhere
+* i’d add direct links to qualtrics, osf, ihearuplay etc
+* i think we need some sort of summary table of # of annotators, # of unique clips they each did on average, and probably just a footnote of the annotators who got the same clip twice, since i’mg guessing that happened super super rarely
+
+RESULTS
+* would be good to start with a clearly laid out analysis plan
+* i think no_answer should be collapsed with junk or just filtered out in the first place and never analyzed. I also tbh don’t understand how that category can exist at all if the task was done being annotated?
+* it’s a little confusing how we go from daylong -> extracted CHI utterances -> short clips -> annotated clips with a majority answer. some sort of flowchart fig would help and help square away terminology
+
+** 0.1: i guess you’re differentiating 100% agreement vs. majority-but-not-100% agreement? this part’s confusing. how were clips with 26 ratings (!) handled in this scheme? i might ONLY worry about majority agreement clips for simplicity?
+* generally speaking, i wouldn’t put in text stuff that’s in tables/figures, so no need to step through the % and N of canonical in each corpus (para 4), but i would put n AND % in table 1
+* also again: i’d take out no_answer altogether here, it’s contributing nothing to the table
+
+* fig2: i find it confusing that some bars are more than one kid. in those cases could the kids be stacked with a black outline within the 
+blue and pink showing each one or something? i’d also put each x-tick.
+
+** .2: didn’t we discuss lots of ways that apparently ppl calc CBR? we should mention/justify this somewhere
+* i do NOT think we should collapse over kids within an age bin ever; not sure why we’d want to?
+* sorry but i really don’t understand the age in months vs. days distinction made throughout: i think to most readers 360 days = 11.8 months, but i think the idea here is that 360 days would actually be the 11 month ‘bin’? not sure why we need this kind of binning?
+* para 4: i’m not sure i’d include this info: seem like somewhat arbitrary agespans. maybe just <10mo and >10 mo? 
+* I think i’d also generally avoid going into detail about outliers in text, but maybe that’s my personal preference, both here and in the last para of .2 and in .3, it seems a little too detailed without a ready generalization/takehome to leave readers with
+* i’m also worried about using a N cutoff for CBO without taking into account how many clips there were; getting 10/500 != getting 10/69
+* generally, it looks like the CBO and CBR results are essentially identical, no? do we actually need both sets of results in the paper vs. suppmatt? if we want both then a much clearer “just as we saw in CBR…” would be very helpful 
+
+* fig 3/4: i’d do 1 dot per kid no collapsing by any kind of bracket or sizing of dots; the line fit doesn’t take that into account properly for instance, and i think it’s confusing
+
+* fig 5: why only 4 corpora? it looks like this is bc of only a tiny amount of relevant data for warlaumont, but not sure why cychosz was removed? in any even this should be clearly stated somewhere, sorry if i missed it
+* fig 5: i’d do smaller/hollow dots, and a free x axis
+
+** .3: header says ‘by corpus’ sentence one says ‘by language’ which do you mean? i wouldn’t put the correlation data in text, i’d just make it one table with the CBO and CBR (if we keep both in main text) Rs, Ns, CIs, age-ranges, and Pvals so that text can talk about take-home not details
+* insignificant != not statistically significant.
+
+** .4 
+* not sure we need the results by gender at all—and not sure what we should be concluding. the correlations of m vs. female have overlapping CIs, and i’m not sure the potential age concern is an age concern given the wide SDs on each genders ages
+
+*general point: i’m a big fan of a tiny bit of interp at the end of each results para/section to help readers sift through and tie results to the initially framed questions from intro
