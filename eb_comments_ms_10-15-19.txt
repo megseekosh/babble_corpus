@@ -1,6 +1,7 @@
 Elika comments on https://www.overleaf.com/project/5d938d462cf8090001a6f212 manuscript, 10/15
+Meg replies to comments about results 10/22
+EB replied only about results to clear out issues that are fixed 10/29
 
-* abstract: i love writing abstracts, so happy to take that on - just a note that Meg already did this. 
 * intro: 
 ** 1.1 has some confusing flow, sentence fragments, etc. some points of confusion
 a) rather than immediately diving into ‘north american context’ and ‘english’ i think i’d probably say something like ‘generally, canonical babbling has been linked to xyz’ …BUT that was in north american settings/english. We’re just not sure if it holds globally, that’s one of the things we’d like to find out.
@@ -25,32 +26,18 @@ METHODS
 RESULTS
 * would be good to start with a clearly laid out analysis plan
 %%%- DONE
-
-* i think no_answer should be collapsed with junk or just filtered out in the first place and never analyzed. I also tbh don’t understand how that category can exist at all if the task was done being annotated? 
-%%%- I don't understand either. Seems like a programming error from the task setup. Overall not a big deal given the small n, but just figured I should mention it to be maximally transparent. 
-
-* it’s a little confusing how we go from daylong -> extracted CHI utterances -> short clips -> annotated clips with a majority answer. some sort of flowchart fig would help and help square away terminology 
-%%%- Good idea, I thought something similar to what you all did in your Dev Sci paper last year would be good. Amanda's going to do this. 
-
-** 0.1: i guess you’re differentiating 100% agreement vs. majority-but-not-100% agreement? this part’s confusing. how were clips with 26 ratings (!) handled in this scheme? i might ONLY worry about majority agreement clips for simplicity? 
-%%%- I now made this clearer and state that we do not differentiate between 100% agreement and majority agreement clips. Let me know if it's still confusing. 
+%% eb: do you mean the first two sentences of Pre-processing of annotations? it's not really part of that section--i'd put it just right under Results.
 
 
 * generally speaking, i wouldn’t put in text stuff that’s in tables/figures, so no need to step through the % and N of canonical in each corpus (para 4), but i would put n AND % in table 1 
 %%%- Let's talk this over with the group. In principle, I'm fine to remove this paragraph. 
-
-
-* also again: i’d take out no_answer altogether here, it’s contributing nothing to the table 
-%%%- Removed. 
-
-
+%% eb:what did folks decide? i vote for minimizing redundancy, saving worsd.
 
 * fig2: i find it confusing that some bars are more than one kid. in those cases could the kids be stacked with a black outline within the 
 blue and pink showing each one or something? 
 %%%- I tried that but some of the n are really low for some age groups (e.g. 0;3) making it hard to read when I divide the column. Since this isn't the most informative plot, though it is still interesting to see the relationship between canonical and noncanonical just by age, independent of corpus, maybe I should move it to the appendix?
-i’d also put each x-tick. 
-%%%- Adding a tick for each point on the x-axis made it very, very difficult to read the axis (even if I change the direction, size, and boldness of each tick label)
 
+%% eb: not sure where this figure went but the appendix isn't in the crossling_paper.tex and not rendering in its separate tex so maybe it's there? 
 
 
 ** .2: didn’t we discuss lots of ways that apparently ppl calc CBR? we should mention/justify this somewhere
@@ -58,42 +45,44 @@ i’d also put each x-tick.
 
 * i do NOT think we should collapse over kids within an age bin ever; not sure why we’d want to?
 %%%- So I moved the one table and figure where I collapsed into age bins into the appendices now. I actually do think this analysis is interesting, to look at CBR growth just by age. But I agree that it's confusing to sometimes present indivdual data points for kids and sometimes, as in the first histogram, to not do so. 
+%% eb: appendix seems fine for this, just careful with description and stats given different variances/#s
 
 * sorry but i really don’t understand the age in months vs. days distinction made throughout: i think to most readers 360 days = 11.8 months, but i think the idea here is that 360 days would actually be the 11 month ‘bin’? not sure why we need this kind of binning?
 %%%- I primarily used age_in_days to avoid having to artificially visualize data by jittering overlapping points in the main CBR*age*corpus plot. But I included both age_in_days and age_in_months because age_in_months is obviously more intuitive. The only time that age_in_days comes up is for this plot and the lm/correlation I report for it. I also report the linear model results using the age_in_months variable. If using days and months still seems confusing/unncessary, let me know. I can remove it but the plot will be much harder to read (esp if I add confidence intervals, which I haven't yet). 
+%% eb: i'm still confused. you can keep the age_in_days variable and still have the graph be accurate without jitter by just doing age_in_days/30.4167, and then you're not actually losing info by calling a 14.4 and a 14.0 month old the same age, and you can title the access whatever you want...the double axes are redundant without adding more info [but not a huge deal so i guess i'd fix other stuff first]
+%% eb: why wouldn't the model use age_in_days? or maybe even a centered version of that var? 
+%% eb: Relatedly--should be specific about what the model formual. a model with one predictor if you have 1 datapoint per kid is the same as the correlation, no? but maybe you have repeated measures or random effects or smoething? or just wanted to get the beta?
 
 * para 4: i’m not sure i’d include this info: seem like somewhat arbitrary agespans. maybe just <10mo and >10 mo? 
 %%%- I didn't do all children over 10mo because that spans all the way up to 36mo. But I changed the age ranges and I think the choice of ranges should be more justified now. Lmk what you think. 
+%% eb: do you mean bc now it's 2-6mo and then 7-12 mo? But then a couple sentences later it still talks about <10mo (As anticipated...) and i don't see any justification for the age-ranges (i.e. why you picked them)
 
-* I think i’d also generally avoid going into detail about outliers in text, but maybe that’s my personal preference, both here and in the last para of .2 and in .3, it seems a little too detailed without a ready generalization/takehome to leave readers with
-%%%- Part about outliers removed. 
-
-* i’m also worried about using a N cutoff for CBO without taking into account how many clips there were; getting 10/500 != getting 10/69
-%%%-We now decided to remove the artbitrary n=10 cutoff. Instead I do a binary plot of which kids have reached .15 and which haven't. 
 
 * generally, it looks like the CBO and CBR results are essentially identical, no? do we actually need both sets of results in the paper vs. suppmatt? if we want both then a much clearer “just as we saw in CBR…” would be very helpful
 %%%-Yes, CBO has mostly been removed now. 
+%eb: why mostly? if it's staying in anywhere should be mentioned in analysis plan; if it's not staying in for some sub-analyses need tob e clear why not. definitely features prominintly in the conclusion...
 
-* fig 3/4: i’d do 1 dot per kid no collapsing by any kind of bracket or sizing of dots; the line fit doesn’t take that into account properly for instance, and i think it’s confusing
-%%%-Each point represents one child and size now refers to the number of clips that went into calculating that child's CBR. 
+
 
 * fig 5: why only 4 corpora? it looks like this is bc of only a tiny amount of relevant data for warlaumont, but not sure why cychosz was removed? in any even this should be clearly stated somewhere, sorry if i missed it
 %%%-Only four corpora because we're looking at a cross-sectional sample within each corpus. This is now mentioned more explicitly in the text. 
-
+%% eb: i'd state this in the caption too
 
 * fig 5: i’d do smaller/hollow dots, and a free x axis
 %%%-Made dots smaller and fainter to see overlap better. Isn't a free scale kind of misleading? Since some corpora (Seedlings) have smaller age range than others (Tseltal, Yeli)? Or would you suggest that I free the scale but explicitly mention in the caption that the x-axis range differs by corpus?
-
+%% eb: yeah i'd free scale, and make dots hollow, and mention free scale in caption
 
 ** .3: header says ‘by corpus’ sentence one says ‘by language’ which do you mean? i wouldn’t put the correlation data in text, i’d just make it one table with the CBO and CBR (if we keep both in main text) Rs, Ns, CIs, age-ranges, and Pvals so that text can talk about take-home not details
 %%%-changed to say corpus throughout instead of language
+%% eb: but what about making this (and any other # heavy parts) a table to make the para more readable?
 
-* insignificant != not statistically significant.
-%%%-changed
+
 
 ** .4 
 * not sure we need the results by gender at all—and not sure what we should be concluding. the correlations of m vs. female have overlapping CIs, and i’m not sure the potential age concern is an age concern given the wide SDs on each genders ages
 %%%-We did decide in the meeting to keep the analyses by gender. I now just mention that age range *could* be a concern between males and females to help explain why we didn't replicate the finding that CBR shows stronger growth in female children than male. 
+%% eb: i'd definitely downplay the age-range thing even further. "We do note that while not statistically differentiable, the females in our sample 1.5 months younger (age{sd}girls age{sd} boys); future work controlling this more precisely would be a welcome addition" or smoethiing
 
 *general point: i’m a big fan of a tiny bit of interp at the end of each results para/section to help readers sift through and tie results to the initially framed questions from intro
 %%%-Have now added a quick blurb at the end of each major section that ties it back into the research questions. 
+%% eb: great. but not it feels like the big explanation about the methods varying across corpora ('segmentation methodologies differed...') feels like discussion not results). so i'd advocate for a tiny interpretive statement and then pasting the bigger point you're making into discussion.
