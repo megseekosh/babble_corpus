@@ -57,7 +57,7 @@ blue and pink showing each one or something?
 * sorry but i really don’t understand the age in months vs. days distinction made throughout: i think to most readers 360 days = 11.8 months, but i think the idea here is that 360 days would actually be the 11 month ‘bin’? not sure why we need this kind of binning?
 %%%- I primarily used age_in_days to avoid having to artificially visualize data by jittering overlapping points in the main CBR*age*corpus plot. But I included both age_in_days and age_in_months because age_in_months is obviously more intuitive. The only time that age_in_days comes up is for this plot and the lm/correlation I report for it. I also report the linear model results using the age_in_months variable. If using days and months still seems confusing/unncessary, let me know. I can remove it but the plot will be much harder to read (esp if I add confidence intervals, which I haven't yet). 
 %% eb: i'm still confused. you can keep the age_in_days variable and still have the graph be accurate without jitter by just doing age_in_days/30.4167, and then you're not actually losing info by calling a 14.4 and a 14.0 month old the same age, and you can title the access whatever you want...the double axes are redundant without adding more info [but not a huge deal so i guess i'd fix other stuff first]
-%%% removed age_in_days from visual - only reports in months now
+%%% removed age_in_days from visual - only reports in months now for the visual
 
 %% eb: why wouldn't the model use age_in_days? or maybe even a centered version of that var? 
 %%% There are two models, one for age in days and one for age in months to get the beta coefficient. All variables are centered (which I now explicitly mention earlier in the Results).
