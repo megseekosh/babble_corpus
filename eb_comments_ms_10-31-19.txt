@@ -5,7 +5,11 @@ EB replied only about results to clear out issues that are fixed 10/29
 * intro: 
 ** 1.1 has some confusing flow, sentence fragments, etc. some points of confusion
 a) rather than immediately diving into ‘north american context’ and ‘english’ i think i’d probably say something like ‘generally, canonical babbling has been linked to xyz’ …BUT that was in north american settings/english. We’re just not sure if it holds globally, that’s one of the things we’d like to find out.
+
+
 b) the intro previews CBR without calling it that (which i think is good!) but it also makes it seem like .15 and 10months is claimed to be _GOD’S TRUTH_ and it’s not clear to me that Oller ever meant it that way
+
+
 c) things not in intro at all: CBO (i’m on board with a ‘layperson’s way to establish whether the child’ babbles) vs. a technical definition, but perhaps an explicit aim should be to see whether those actually diverge in what they tell us?
 d) gender. do we actually think there will be gender differences based o previous lit? i had no preconceived notions about that for babble; if anything i’d guess there would be no gender diffs, since my read is that those emerge at the lexical level. 
 
@@ -104,6 +108,7 @@ blue and pink showing each one or something?
 * not sure we need the results by gender at all—and not sure what we should be concluding. the correlations of m vs. female have overlapping CIs, and i’m not sure the potential age concern is an age concern given the wide SDs on each genders ages
 %%%-We did decide in the meeting to keep the analyses by gender. I now just mention that age range *could* be a concern between males and females to help explain why we didn't replicate the finding that CBR shows stronger growth in female children than male. 
 %% eb: i'd definitely downplay the age-range thing even further. "We do note that while not statistically differentiable, the females in our sample 1.5 months younger (age{sd}girls age{sd} boys); future work controlling this more precisely would be a welcome addition" or smoethiing
+%%% DONE
 
 
 
@@ -111,3 +116,4 @@ blue and pink showing each one or something?
 *general point: i’m a big fan of a tiny bit of interp at the end of each results para/section to help readers sift through and tie results to the initially framed questions from intro
 %%%-Have now added a quick blurb at the end of each major section that ties it back into the research questions. 
 %% eb: great. but not it feels like the big explanation about the methods varying across corpora ('segmentation methodologies differed...') feels like discussion not results). so i'd advocate for a tiny interpretive statement and then pasting the bigger point you're making into discussion.
+%%% DONE
