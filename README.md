@@ -30,7 +30,7 @@ from linking file and answer spreadsheet, retrieves:
 - total number of clips in this part
 - histogram of the length of utterances in this part
 
-## babble_part_metadata
+## Majority agreement
 
 Script to determine the minimum sample size needed to obtain a stable majority agreement. 
 It requires:
