@@ -30,4 +30,12 @@ from linking file and answer spreadsheet, retrieves:
 - total number of clips in this part
 - histogram of the length of utterances in this part
 
+## babble_part_metadata
 
+Script to determine the minimum sample size needed to obtain a stable majority agreement. 
+It requires:
+- A data file with at least 20k entries (the chunks indeces are hard-coded, but can be changed if the file is smaller)
+It returns, for every chunk:
+- number of clips with at least one annotation
+- number of clips with 2 or more annotations
+- the proportion of majority agreement for the given data (includes both 2/3 agreement and 3/3 agreement)
