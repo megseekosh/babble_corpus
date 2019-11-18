@@ -1,0 +1,109 @@
+---
+title: "Majority Agreement Analysis Across Samples Sizes"
+---
+
+# Analysis of sample size for stable majority agreement
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Load data from local data file
+```{r load_data}
+library(tidyverse)
+data_all <- read_delim("all_data_bc.csv", delim=',',col_types = cols(.default = "c"))
+
+# Slice up data into chunks 
+chunk_500_a <- data_all[1:500,]
+chunk_500_b <- data_all[501:1001,]
+chunk_500_d <- data_all[7710:8209,]
+chunk_800_a <- data_all[1504:2304,]
+chunk_800_a <- data_all[6909:7709,]
+chunk_800_b <- data_all[2305:3105,]
+chunk_800_c <- data_all[3106:3906,]
+chunk_1000_a <- data_all[10000:11000,]
+chunk_1000_b <- data_all[17003:18003,]
+chunk_1000_c <- data_all[12001:13001,]
+chunk_2000_a <- data_all[6909:8909,]
+chunk_2000_b <- data_all[13002:15002,]
+chunk_2000_c <- data_all[15003:17002,]
+```
+
+``` {r data analysis}
+proportion_agreement <- function(data_new){
+nb_answers_new <- data_new %>%
+  group_by(AudioData) %>%
+  count()
+print(paste("Number of clips with at least one annotation:", nrow(nb_answers_new)))
+not_finished_new <- nb_answers_new %>%
+  filter(n<=2)
+print(paste("Number of clips with at least one annotation missing:",nrow(not_finished_new)))
+three_answers_new <- nb_answers_new %>%
+  filter(n>=3)
+print(paste("Number of clips with at least three annotations:",nrow(three_answers_new)))
+agreement_new <- data_new %>%
+  filter(AudioData %in% three_answers_new$AudioData) %>%
+  select(c("AudioData","Answer"))%>%
+  unique() %>%
+  group_by(AudioData) %>%
+  count() %>%
+  filter(n==1)
+print(paste("Number of clips with 100% agreement:",nrow(agreement_new)))
+non_majority_agreement_new <- data_new %>%
+  filter(AudioData %in% three_answers_new$AudioData) %>%
+  select(c("AudioData","Answer"))%>%
+  unique() %>%
+  group_by(AudioData) %>%
+  count() %>%
+  filter(n>2)
+print(paste("Number of clips without majority agreement:",nrow(non_majority_agreement_new)))
+majority_agreement_new <- data_new %>%
+  filter(AudioData %in% three_answers_new$AudioData) %>%
+  select(c("AudioData","Answer"))%>%
+  unique() %>%
+  group_by(AudioData) %>%
+  count() %>%
+  filter(n>=2)
+print(paste("Number of clips with majority agreement:",nrow(majority_agreement_new)))
+print(paste("Proportion of clips with majority agreement:",nrow(majority_agreement_new)/nrow(three_answers_new)))
+return(nrow(majority_agreement_new)/nrow(three_answers_new))
+}
+```
+
+
+
+``` {r run function}
+paste("500 datapoints:")
+proportion_agreement(chunk_500_a) #500
+proportion_agreement(chunk_500_b) #500
+proportion_agreement(chunk_500_d) #500
+```
+
+```{r function}
+print(paste("800 datapoints"))
+proportion_agreement(chunk_800_a) #800
+proportion_agreement(chunk_800_b) #800
+proportion_agreement(chunk_800_c) #800
+```
+
+```{r run function}
+print(paste("1000 datapoints"))
+proportion_agreement(chunk_1000_a) #1000
+proportion_agreement(chunk_1000_b) #1000
+proportion_agreement(chunk_1000_c) #1000
+```
+
+```{r run function}
+print(paste("2000 datapoints"))
+proportion_agreement(chunk_2000_a) #2000
+proportion_agreement(chunk_2000_b) #2000
+proportion_agreement(chunk_2000_c) #2000
+```
+
+```{r visualization}
+viz <- data_all %>%
+  filter(AudioData %in% majority_agreement_new$AudioData)
+ggplot(viz, aes(Answer)) +
+  geom_histogram(stat="count")
+```
