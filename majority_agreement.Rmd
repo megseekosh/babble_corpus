@@ -64,7 +64,7 @@ majority_agreement_new <- data_new %>%
   unique() %>%
   group_by(AudioData) %>%
   count() %>%
-  filter(n>=2)
+  filter(n<=2)
 print(paste("Number of clips with majority agreement:",nrow(majority_agreement_new)))
 print(paste("Proportion of clips with majority agreement:",nrow(majority_agreement_new)/nrow(three_answers_new)))
 return(nrow(majority_agreement_new)/nrow(three_answers_new))
