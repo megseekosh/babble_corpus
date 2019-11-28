@@ -40,7 +40,7 @@ not_finished_new <- nb_answers_new %>%
   filter(n<=2)
 print(paste("Number of clips with at least one annotation missing:",nrow(not_finished_new)))
 three_answers_new <- nb_answers_new %>%
-  filter(n>=3)
+  filter(n==3)
 print(paste("Number of clips with at least three annotations:",nrow(three_answers_new)))
 agreement_new <- data_new %>%
   filter(AudioData %in% three_answers_new$AudioData) %>%
